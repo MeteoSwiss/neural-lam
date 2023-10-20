@@ -1,27 +1,9 @@
-Arguments:
-dataset: cosmo
-model: graph_lam
-subset_ds: 1
-seed: 42
-n_workers: 32
-epochs: 2
-batch_size: 4
-load: None
-restore_opt: 0
-precision: 32
-graph: multiscale
-hidden_dim: 64
-hidden_layers: 1
-processor_layers: 4
-mesh_aggr: sum
-ar_steps: 1
-loss: mse
-step_length: 1
-lr: 0.001
-val_interval: 1
-eval: test
-n_example_pred: 1
-Loaded graph with 233541 nodes (226980 grid, 6561 mesh)
-Edges in subgraphs: m2m=57616, g2m=213432, m2g=907920
-Running evaluation on test
-Testing: |          | 0/? [00:00<?, ?it/s]Testing:   0%|          | 0/12 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/12 [00:00<?, ?it/s]
+Loaded graph with 240102 nodes (226980 grid, 13122 mesh)
+Loaded hierachical graph with structure:
+level 0 - 2 nodes, 3 same-level edges
+Loaded hierachical graph with structure:
+level 0 - 2 nodes, 3 same-level edges
+Loaded hierachical graph with structure:
+level 0 - 2 nodes, 3 same-level edges
+Loaded hierachical graph with structure:
+level 0 - 2 nodes, 3 same-level edges

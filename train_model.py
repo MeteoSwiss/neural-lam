@@ -131,18 +131,14 @@ def main():
             'cosmo',
             '--subset_ds',
             '1',
-            '--ar_steps',
-            '24',
             '--n_workers',
-            '32',
+            '128',
             '--epochs',
             '2',
             '--batch_size',
             '4',
-            '--eval',
-            'test'])
-    print_args(args)
-
+            '--model',
+            'hi_lam'])
     # Asserts for arguments
     assert args.model in MODELS, f"Unknown model: {args.model}"
     assert args.step_length <= 3, "Too high step length"

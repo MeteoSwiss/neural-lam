@@ -23,7 +23,7 @@ class ARModel(pl.LightningModule):
         self.lr = args.lr
 
         # Log prediction error for these time steps forward
-        self.val_step_log_errors = np.array([1])
+        self.val_step_log_errors = np.arange(1, 24)
         self.metrics_initialized = False  # Flag to check if this has been done
 
         # Some constants useful for sub-classes
@@ -293,7 +293,7 @@ class ARModel(pl.LightningModule):
         log_spatial_losses = spatial_loss[:, self.val_step_log_errors - 1]
         self.spatial_loss_maps.append(log_spatial_losses)  # (B, N_log, N_grid)
 
-        all_combinations = list(
+        list(
             itertools.product(
                 constants.param_names_short,
                 constants.vertical_levels))
@@ -314,26 +314,25 @@ class ARModel(pl.LightningModule):
                         target_rescaled[:n_additional_examples]):
                     self.plotted_examples += 1  # Increment already here
                     # Each slice is (pred_steps, N_grid, d_f)
-                    # Iterate over prediction horizon time steps
-                    for t_i, (pred_t, target_t) in enumerate(
-                            zip(pred_slice, target_slice), start=1):
-                        # Iterate over variables
-                        var_figs = []
-                        for var_name, var_unit in zip(
-                                constants.param_names_short, constants.param_units):
-                            # Iterate over vertical levels
-                            for var_level in constants.vertical_levels:
-                                var_i = constants.param_names_short.index(
-                                    var_name) * len(constants.vertical_levels) + constants.vertical_levels.index(var_level)
-                                # Calculate var_vrange for each level
-                                var_vmin = min(
-                                    pred_t[:, var_i].min(),
-                                    target_t[:, var_i].min())
-                                var_vmax = max(
-                                    pred_t[:, var_i].max(),
-                                    target_t[:, var_i].max())
-                                var_vrange = (var_vmin, var_vmax)
+                    # Iterate over variables
+                    for var_name, var_unit in zip(
+                            constants.param_names_short, constants.param_units):
+                        # Iterate over vertical levels
+                        for var_level in constants.vertical_levels:
+                            var_i = constants.param_names_short.index(
+                                var_name) * len(constants.vertical_levels) + constants.vertical_levels.index(var_level)
 
+                            # Calculate var_vrange for each level
+                            var_vmin = min(
+                                pred_slice[:, :, var_i].min(),
+                                target_slice[:, :, var_i].min())
+                            var_vmax = max(
+                                pred_slice[:, :, var_i].max(),
+                                target_slice[:, :, var_i].max())
+                            var_vrange = (var_vmin, var_vmax)
+                            # Iterate over time steps
+                            for t_i, (pred_t, target_t) in enumerate(
+                                    zip(pred_slice, target_slice), start=1):
                                 # Add vertical level to the plot title
                                 title = f"{var_name} ({var_unit}), level={var_level}, t={t_i} h"
 
@@ -343,15 +342,11 @@ class ARModel(pl.LightningModule):
                                     title=title,
                                     vrange=var_vrange
                                 )
-                                var_figs.append(var_fig)
+                                wandb.log(
+                                    {f"{var_name}_lvl_{var_level}_t_{t_i}": wandb.Image(var_fig)})
 
-                        for (var_name, var_level), fig in zip(
-                                all_combinations, var_figs):
-                            wandb.log(
-                                {f"{var_name}_lvl_{var_level}_t_{t_i}": wandb.Image(fig)})
-
-                        # Close all figs for this time step, saves memory
-                        plt.close("all")
+                            # Close all figs for this time step, saves memory
+                            plt.close("all")
 
                     # Save pred and target as .pt files
                     torch.save(pred_slice.cpu(), os.path.join(

@@ -40,14 +40,17 @@ class WeatherDataset(torch.utils.data.Dataset):
 
         # If subsample index should be sampled (only duing training)
         self.random_subsample = split == "train"
+        self.split = split
 
     def __len__(self):
-        return len(self.sample_names) - 2
+        num_files = 3 if self.split == "train" else 25
+        return len(self.sample_names) - num_files + 1
 
     def __getitem__(self, idx):
         # === Sample ===
         sample = torch.tensor([])
-        for i in range(3):
+        num_files = 3 if self.split == "train" else 25
+        for i in range(num_files):
             sample_name = self.sample_names[idx + i]
             sample_path = os.path.join(
                 self.sample_dir_path,

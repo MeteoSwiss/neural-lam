@@ -1,33 +1,4 @@
-Arguments:
-dataset: cosmo
-model: graph_lam
-subset_ds: 1
-seed: 42
-n_workers: 32
-epochs: 2
-batch_size: 4
-load: None
-restore_opt: 0
-precision: 32
-graph: multiscale
-hidden_dim: 64
-hidden_layers: 1
-processor_layers: 4
-mesh_aggr: sum
-ar_steps: 1
-loss: mse
-step_length: 1
-lr: 0.001
-val_interval: 1
-eval: test
-n_example_pred: 1
 Loaded graph with 233541 nodes (226980 grid, 6561 mesh)
 Edges in subgraphs: m2m=57616, g2m=213432, m2g=907920
 Running evaluation on test
-Testing: |          | 0/? [00:00<?, ?it/s]Testing:   0%|          | 0/12 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/12 [00:00<?, ?it/s]Testing DataLoader 0:   8%|▊         | 1/12 [00:37<06:48,  0.03it/s]Testing DataLoader 0:  17%|█▋        | 2/12 [00:37<03:07,  0.05it/s]Testing DataLoader 0:  25%|██▌       | 3/12 [00:37<01:53,  0.08it/s]Testing DataLoader 0:  33%|███▎      | 4/12 [00:38<01:16,  0.10it/s]Testing DataLoader 0:  42%|████▏     | 5/12 [00:38<00:53,  0.13it/s]Testing DataLoader 0:  50%|█████     | 6/12 [00:38<00:38,  0.15it/s]Testing DataLoader 0:  58%|█████▊    | 7/12 [00:39<00:27,  0.18it/s]Testing DataLoader 0:  67%|██████▋   | 8/12 [00:39<00:19,  0.20it/s]Testing DataLoader 0:  75%|███████▌  | 9/12 [00:39<00:13,  0.23it/s]Testing DataLoader 0:  83%|████████▎ | 10/12 [00:40<00:08,  0.25it/s]Testing DataLoader 0:  92%|█████████▏| 11/12 [00:40<00:03,  0.27it/s]Testing DataLoader 0: 100%|██████████| 12/12 [00:40<00:00,  0.29it/s]Testing DataLoader 0: 100%|██████████| 12/12 [00:47<00:00,  0.25it/s]
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-       Test metric             DataLoader 0
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-    test_loss_unroll1        66.88790893554688
-     test_mean_loss          66.88790893554688
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+Testing: |          | 0/? [00:00<?, ?it/s]Testing:   0%|          | 0/7 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]

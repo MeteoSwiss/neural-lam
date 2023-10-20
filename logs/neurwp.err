@@ -1,0 +1,30 @@
+[rank: 1] Seed set to 42
+[rank: 2] Seed set to 42
+[rank: 0] Seed set to 42
+[rank: 3] Seed set to 42
+[rank: 3] Seed set to 42
+[rank: 1] Seed set to 42
+[rank: 2] Seed set to 42
+wandb: Currently logged in as: kode. Use `wandb login --relogin` to force relogin
+cat: /sys/module/amdgpu/initstate: No such file or directory
+ERROR:root:Driver not initialized (amdgpu not found in modules)
+wandb: Tracking run with wandb version 0.15.12
+wandb: Run data is saved locally in /users/sadamov/pyprojects/neural-lam/wandb/run-20231020_175905-449c08gp
+wandb: Run `wandb offline` to turn off syncing.
+wandb: Syncing run subset-eval-test-graph_lam-4x64-10_20_17_59_04
+wandb: ⭐️ View project at https://wandb.ai/kode/neural-lam
+wandb: 🚀 View run at https://wandb.ai/kode/neural-lam/runs/449c08gp
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/lightning_fabric/plugins/environments/slurm.py:191: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python train_model.py ...
+[rank: 0] Seed set to 42
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/pytorch_lightning/loggers/wandb.py:389: There is a wandb run already in progress and newly created instances of `WandbLogger` will reuse this run. If this is not desired, call `wandb.finish()` before instantiating `WandbLogger`.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+LOCAL_RANK: 3 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+LOCAL_RANK: 2 - CUDA_VISIBLE_DEVICES: [0,1,2,3]
+/users/sadamov/pyprojects/neural-lam/neural_lam/vis.py:76: RuntimeWarning: More than 20 figures have been opened. Figures created through the pyplot interface (`matplotlib.pyplot.figure`) are retained until explicitly closed and may consume too much memory. (To control this warning, see the rcParam `figure.max_open_warning`). Consider using `matplotlib.pyplot.close()`.
+  fig, axes = plt.subplots(2, 1, figsize=(9, 11),
+slurmstepd: error: *** JOB 1240207 ON nid003160 CANCELLED AT 2023-10-20T18:00:37 ***

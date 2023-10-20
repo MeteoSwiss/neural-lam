@@ -1,0 +1,50 @@
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:67: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 2 processes
+----------------------------------------------------------------------------------------------------
+
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/pytorch_lightning/trainer/connectors/logger_connector/logger_connector.py:67: Starting from v1.9.0, `tensorboardX` has been removed as a dependency of the `pytorch_lightning` package, due to potential conflicts with other packages in the ML ecosystem. For this reason, `logger=True` will use `CSVLogger` as the default logger, unless the `tensorboard` or `tensorboardX` packages are found. Please `pip install lightning[extra]` or one of them to enable TensorBoard support by default
+Initializing distributed: GLOBAL_RANK: 0, MEMBER: 1/2
+Initializing distributed: GLOBAL_RANK: 1, MEMBER: 2/2
+----------------------------------------------------------------------------------------------------
+distributed_backend=nccl
+All distributed processes registered. Starting with 2 processes
+----------------------------------------------------------------------------------------------------
+
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1]
+
+  | Name   | Type   | Params
+----------------------------------
+0 | linear | Linear | 15    
+----------------------------------
+15        Trainable params
+0         Non-trainable params
+15        Total params
+0.000     Total estimated model params size (MB)
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/lightning_fabric/loggers/csv_logs.py:196: Experiment logs directory /users/sadamov/pyprojects/neural-lam/lightning_logs/version_2 exists and is not empty. Previous log files in this directory will be deleted when the new ones are saved!
+/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/pytorch_lightning/callbacks/model_checkpoint.py:630: Checkpoint directory /users/sadamov/pyprojects/neural-lam/lightning_logs/version_2/checkpoints exists and is not empty.
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0,1]
+LOCAL_RANK: 1 - CUDA_VISIBLE_DEVICES: [0,1]
+
+  | Name   | Type   | Params
+----------------------------------
+0 | linear | Linear | 15    
+----------------------------------
+15        Trainable params
+0         Non-trainable params
+15        Total params
+0.000     Total estimated model params size (MB)
+`Trainer.fit` stopped: `max_epochs=10` reached.
+`Trainer.fit` stopped: `max_epochs=10` reached.

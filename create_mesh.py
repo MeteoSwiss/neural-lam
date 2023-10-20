@@ -130,7 +130,9 @@ def main():
             'from bottom up (default: None (no limit))')
     parser.add_argument('--hierarchical', type=int, default=0,
         help='Generate hierarchical mesh graph (default: 0, no)')
-    args = parser.parse_args()
+    # args = parser.parse_args()
+    #TODO Remove this
+    args = parser.parse_args(args=['--dataset', 'cosmo', '--graph', 'multiscale', '--plot', '1'])
 
     # Load grid positions
     static_dir_path = os.path.join("data", args.dataset, "static")

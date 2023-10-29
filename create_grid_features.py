@@ -3,7 +3,6 @@ from argparse import ArgumentParser
 
 import numpy as np
 import torch
-from tqdm import tqdm
 
 
 def main():
@@ -11,7 +10,7 @@ def main():
     parser.add_argument('--dataset', type=str, default="meps_example",
                         help='Dataset to compute weights for (default: meps_example)')
     args = parser.parse_args()
- 
+
     static_dir_path = os.path.join("data", args.dataset, "static")
 
     # -- Static grid node features --
@@ -21,16 +20,23 @@ def main():
     pos_max = torch.max(torch.abs(grid_xy))
     grid_xy = grid_xy / pos_max  # Divide by maximum coordinate
 
-    geopotential = torch.tensor(np.load(os.path.join(static_dir_path,
-                                                     "surface_geopotential.npy")))  # (N_x, N_y)
+    geopotential = torch.tensor(
+        np.load(
+            os.path.join(
+                static_dir_path,
+                "surface_geopotential.npy")))  # (N_x, N_y)
     geopotential = geopotential.flatten(0, 1).unsqueeze(1)  # (N_grid,1)
     gp_min = torch.min(geopotential)
     gp_max = torch.max(geopotential)
     # Rescale geopotential to [0,1]
-    geopotential = (geopotential - gp_min)/(gp_max - gp_min)  # (N_grid, 1)
+    geopotential = (geopotential - gp_min) / (gp_max - gp_min)  # (N_grid, 1)
 
-    grid_border_mask = torch.tensor(np.load(os.path.join(static_dir_path,
-                                                         "border_mask.npy")), dtype=torch.int64)  # (N_x, N_y)
+    grid_border_mask = torch.tensor(
+        np.load(
+            os.path.join(
+                static_dir_path,
+                "border_mask.npy")),
+        dtype=torch.int64)  # (N_x, N_y)
     grid_border_mask = grid_border_mask.flatten(0, 1).to(
         torch.float).unsqueeze(1)  # (N_grid, 1)
 

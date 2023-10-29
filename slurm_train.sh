@@ -5,8 +5,8 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:4
 #SBATCH --time=23:59:00
-#SBATCH --output=logs/neurwp16.out
-#SBATCH --error=logs/neurwp16.err
+#SBATCH --output=logs/neurwp.out
+#SBATCH --error=logs/neurwp.err
 #SBATCH --exclusive
 #SBATCH --mem=490G
 

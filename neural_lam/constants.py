@@ -1,4 +1,5 @@
 import cartopy.crs as ccrs
+import numpy as np
 
 wandb_project = "neural-lam"
 
@@ -70,3 +71,23 @@ grid_limits = [  # In projection
 ]
 
 cosmo_proj = ccrs.PlateCarree()
+selected_proj = cosmo_proj
+pollon = -170.0
+pollat = 43.0
+
+# Plotting
+fig_size = (9, 11)
+example_file = "data/cosmo/train/laf2015112800_extr.nc"
+
+# Time step prediction during training / prediction (eval)
+train_horizon = 3  # hours (t-1 + t -> t+1)
+eval_horizon = 25  # hours (autoregressive)
+
+# Log prediction error for these time steps forward
+val_step_log_errors = np.arange(1, eval_horizon)
+metrics_initialized = False
+
+# Some constants useful for sub-classes
+batch_static_feature_dim = 0  # Only open water?
+grid_forcing_dim = 0  # 5 features for 3 time-step window
+grid_state_dim = len(vertical_levels) * len(param_names)  # 7*4=28

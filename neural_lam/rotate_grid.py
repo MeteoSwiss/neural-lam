@@ -1,10 +1,8 @@
-"""unrotate COSMO rotated coordinates to geographical lat/lon"""
+"""unrotate rotated pole coordinates to geographical lat/lon"""
 
-import cartopy.crs as ccrs
-import cartopy.feature as cf
-import matplotlib.pyplot as plt
 import numpy as np
-import xarray as xr
+
+from neural_lam import constants
 
 
 def unrot_lon(rotlon, rotlat, pollon, pollat):
@@ -81,36 +79,11 @@ def unrot_lat(rotlat, rotlon, pollon, pollat):
 
     return np.degrees(np.arcsin(tmp1))
 
+
 def unrotate_latlon(data):
-    # COSMO-1E rotated pole position
-    pollon = -170.0
-    pollat = 43.0
-    
     xx, yy = np.meshgrid(data.x_1.values, data.y_1.values)
     # unrotate lon/lat
-    lon = unrot_lon(xx, yy, pollon, pollat)
-    lat = unrot_lat(yy, xx, pollon, pollat)
+    lon = unrot_lon(xx, yy, constants.pollon, constants.pollat)
+    lat = unrot_lat(yy, xx, constants.pollon, constants.pollat)
 
     return lon, lat
-
-
-if __name__ == '__main__':
-
-    # get test data
-    data = xr.open_dataset(
-        "/scratch/e1000/meteoswiss/scratch/cosuna/KENDA/ml_v1/ANA16/20160101/laf2016010100_extr.nc")
-    var = data.T.values[0, 59, :, :]
-
-    lon, lat = unrotate_latlon(data)
-
-    # plot
-    fig = plt.figure()
-
-    ax1 = fig.add_subplot(projection=ccrs.PlateCarree())
-    ax1.contourf(lon, lat, var, transform=ccrs.PlateCarree())
-    ax1.add_feature(cf.BORDERS, linestyle='-', edgecolor='white')
-    ax1.add_feature(cf.COASTLINE, linestyle='-', edgecolor='white')
-    ax1.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=0)
-    plt.title("Sones hübsches Chärtli *.*")
-
-    plt.savefig('test.png')

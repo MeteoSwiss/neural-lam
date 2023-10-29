@@ -24,13 +24,13 @@ class ARModel(pl.LightningModule):
         self.lr = args.lr
 
         # Log prediction error for these time steps forward
-        self.val_step_log_errors = np.arange(1, 24)
-        self.metrics_initialized = False  # Flag to check if this has been done
+        self.val_step_log_errors = constants.val_step_log_errors
+        self.metrics_initialized = constants.metrics_initialized
 
         # Some constants useful for sub-classes
-        self.batch_static_feature_dim = 0  # Only open water?
-        self.grid_forcing_dim = 0  # 5 features for 3 time-step window
-        self.grid_state_dim = 28
+        self.batch_static_feature_dim = constants.batch_static_feature_dim 
+        self.grid_forcing_dim = constants.grid_forcing_dim
+        self.grid_state_dim = constants.grid_state_dim
 
         # Load static features for grid/data
         self.border_mask, self.grid_static_features, \

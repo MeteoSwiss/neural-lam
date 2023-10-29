@@ -5,7 +5,7 @@ import numpy as np
 import xarray as xr
 
 from neural_lam import constants, utils
-from neural_lam.rotate_cosmo import unrotate_latlon
+from neural_lam.rotate_grid import unrotate_latlon
 
 
 @matplotlib.rc_context(utils.fractional_plot_bundle(1))
@@ -67,14 +67,13 @@ def plot_prediction(pred, target, obs_mask, title=None, vrange=None):
         vmin, vmax = vrange[0].cpu().item(), vrange[1].cpu().item()
 
     # get test data
-    data_latlon = xr.open_dataset(
-        "/scratch/e1000/meteoswiss/scratch/cosuna/KENDA/ml_v1/ANA16/20160101/laf2016010100_extr.nc")
+    data_latlon = xr.open_dataset(constants.example_file)
     lon, lat = unrotate_latlon(data_latlon)
     lon = lon.T
     lat = lat.T
 
-    fig, axes = plt.subplots(2, 1, figsize=(9, 11),
-                             subplot_kw={"projection": constants.cosmo_proj})
+    fig, axes = plt.subplots(2, 1, figsize=constants.fig_size,
+                             subplot_kw={"projection": constants.selected_proj})
 
     # Plot pred and target
     for ax, data in zip(axes, (target, pred)):
@@ -83,7 +82,7 @@ def plot_prediction(pred, target, obs_mask, title=None, vrange=None):
             lon,
             lat,
             data_grid,
-            transform=constants.cosmo_proj,
+            transform=constants.selected_proj,
             cmap="plasma",
             levels=np.linspace(
                 vmin,
@@ -92,7 +91,7 @@ def plot_prediction(pred, target, obs_mask, title=None, vrange=None):
         ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
         ax.add_feature(cf.COASTLINE, linestyle='-', edgecolor='black')
         ax.gridlines(
-            crs=constants.cosmo_proj,
+            crs=constants.selected_proj,
             draw_labels=False,
             linewidth=0.5,
             alpha=0.5)
@@ -123,14 +122,13 @@ def plot_spatial_error(error, obs_mask, title=None, vrange=None):
         vmin, vmax = vrange
 
     # get test data
-    data_latlon = xr.open_dataset(
-        "/scratch/e1000/meteoswiss/scratch/cosuna/KENDA/ml_v1/ANA16/20160101/laf2016010100_extr.nc")
+    data_latlon = xr.open_dataset(constants.example_file)
     lon, lat = unrotate_latlon(data_latlon)
     lon = lon.T
     lat = lat.T
 
-    fig, ax = plt.subplots(figsize=(9, 11),
-                           subplot_kw={"projection": constants.cosmo_proj})
+    fig, ax = plt.subplots(figsize=constants.fig_size,
+                           subplot_kw={"projection": constants.selected_proj})
 
     error_grid = error.reshape(*constants.grid_shape).cpu().numpy()
 
@@ -138,7 +136,7 @@ def plot_spatial_error(error, obs_mask, title=None, vrange=None):
         lon,
         lat,
         error_grid,
-        transform=constants.cosmo_proj,
+        transform=constants.selected_proj,
         cmap="OrRd",
         levels=np.linspace(
             vmin,
@@ -147,7 +145,7 @@ def plot_spatial_error(error, obs_mask, title=None, vrange=None):
     ax.add_feature(cf.BORDERS, linestyle='-', edgecolor='black')
     ax.add_feature(cf.COASTLINE, linestyle='-', edgecolor='black')
     ax.gridlines(
-        crs=constants.cosmo_proj,
+        crs=constants.selected_proj,
         draw_labels=False,
         linewidth=0.5,
         alpha=0.5)

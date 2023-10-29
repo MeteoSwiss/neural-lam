@@ -1,6 +1,4 @@
-from turtle import setup
 import torch
-import torch.distributed as dist
 import torch_geometric as pyg
 
 

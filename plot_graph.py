@@ -24,7 +24,7 @@ def main():
     parser.add_argument('--show_axis', type=int, default=0,
                         help='If the axis should be displayed (default: 0 (No))')
 
-    args = parser.parse_args(args=['--dataset', 'cosmo', '--save', 'cosmo.html'])
+    args = parser.parse_args()
 
     # Load graph data
     hierarchical, g2m_edge_index, m2g_edge_index, m2m_edge_index, \

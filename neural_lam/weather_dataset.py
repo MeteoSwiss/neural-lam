@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import torch
 import xarray as xr
 
-# BUG: Import should work in interactive mode as well
+# BUG: Import should work in interactive mode as well -> create pypi package
 from neural_lam import constants, utils
 
 
@@ -44,13 +44,13 @@ class WeatherDataset(torch.utils.data.Dataset):
         self.split = split
 
     def __len__(self):
-        num_files = 3 if self.split == "train" else 25
+        num_files = constants.train_horizon if self.split == "train" else constants.eval_horizon
         return len(self.sample_names) - num_files + 1
 
     def __getitem__(self, idx):
         # === Sample ===
         sample = torch.tensor([])
-        num_files = 3 if self.split == "train" else 25
+        num_files = constants.train_horizon if self.split == "train" else constants.eval_horizon
         for i in range(num_files):
             sample_name = self.sample_names[idx + i]
             sample_path = os.path.join(

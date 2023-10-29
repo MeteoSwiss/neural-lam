@@ -1,88 +1,19 @@
-[rank: 0] Seed set to 42
-[rank: 2] Seed set to 42
-[rank: 1] Seed set to 42
-[rank: 3] Seed set to 42
-Traceback (most recent call last):
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 250, in <module>
-    main()
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 185, in main
-    model = model_class(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/hi_lam.py", line 17, in __init__
-Traceback (most recent call last):
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 250, in <module>
-    main()
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 185, in main
-    model = model_class(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/hi_lam.py", line 17, in __init__
-Traceback (most recent call last):
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 250, in <module>
-    main()
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 185, in main
-    model = model_class(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/hi_lam.py", line 17, in __init__
-    super().__init__(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/base_hi_graph_model.py", line 33, in __init__
-    super().__init__(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/base_hi_graph_model.py", line 33, in __init__
-    super().__init__(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/base_hi_graph_model.py", line 33, in __init__
-    up_edges = self.mesh_up_features[l].shape[0]
-IndexError: list index out of range
-    up_edges = self.mesh_up_features[l].shape[0]
-IndexError: list index out of range
-    up_edges = self.mesh_up_features[l].shape[0]
-IndexError: list index out of range
-Traceback (most recent call last):
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 250, in <module>
-    main()
-  File "/users/sadamov/pyprojects/neural-lam/train_model.py", line 185, in main
-    model = model_class(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/hi_lam.py", line 17, in __init__
-    super().__init__(args)
-  File "/users/sadamov/pyprojects/neural-lam/neural_lam/models/base_hi_graph_model.py", line 33, in __init__
-    up_edges = self.mesh_up_features[l].shape[0]
-IndexError: list index out of range
-WARNING:torch.distributed.elastic.multiprocessing.api:Sending process 56231 closing signal SIGTERM
-ERROR:torch.distributed.elastic.multiprocessing.api:failed (exitcode: 1) local_rank: 0 (pid: 56230) of binary: /scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/bin/python
-Traceback (most recent call last):
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/bin/torchrun", line 33, in <module>
-    sys.exit(load_entry_point('torch==2.0.1', 'console_scripts', 'torchrun')())
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/torch/distributed/elastic/multiprocessing/errors/__init__.py", line 346, in wrapper
-    return f(*args, **kwargs)
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/torch/distributed/run.py", line 794, in main
-    run(args)
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/torch/distributed/run.py", line 785, in run
-    elastic_launch(
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 134, in __call__
-    return launch_agent(self._config, self._entrypoint, list(args))
-  File "/scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/envs/neural-lam/lib/python3.9/site-packages/torch/distributed/launcher/api.py", line 250, in launch_agent
-    raise ChildFailedError(
-torch.distributed.elastic.multiprocessing.errors.ChildFailedError: 
-============================================================
-train_model.py FAILED
-------------------------------------------------------------
-Failures:
-[1]:
-  time      : 2023-10-20_21:09:13
-  host      : nid002033
-  rank      : 2 (local_rank: 2)
-  exitcode  : 1 (pid: 56232)
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-[2]:
-  time      : 2023-10-20_21:09:13
-  host      : nid002033
-  rank      : 3 (local_rank: 3)
-  exitcode  : 1 (pid: 56233)
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-------------------------------------------------------------
-Root Cause (first observed failure):
-[0]:
-  time      : 2023-10-20_21:09:13
-  host      : nid002033
-  rank      : 0 (local_rank: 0)
-  exitcode  : 1 (pid: 56230)
-  error_file: <N/A>
-  traceback : To enable traceback see: https://pytorch.org/docs/stable/elastic/errors.html
-============================================================
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+slurmstepd: error: *** STEP 1279356.0 ON nid002036 CANCELLED AT 2023-10-26T13:35:44 ***
+slurmstepd: error: *** JOB 1279356 ON nid002036 CANCELLED AT 2023-10-26T13:35:44 ***
+slurmstepd: error: *** STEP 1275231.0 ON nid002044 CANCELLED AT 2023-10-27T00:12:43 DUE TO TIME LIMIT ***
+slurmstepd: error: *** JOB 1275231 ON nid002044 CANCELLED AT 2023-10-27T00:12:43 DUE TO TIME LIMIT ***
+srun: Job step aborted: Waiting up to 32 seconds for job step to finish.
+[2023-10-27 00:12:43,413] torch.distributed.elastic.agent.server.api: [WARNING] Received 15 death signal, shutting down workers
+[2023-10-27 00:12:43,413] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129672 closing signal SIGTERM
+[2023-10-27 00:12:43,413] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129673 closing signal SIGTERM
+[2023-10-27 00:12:43,413] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129674 closing signal SIGTERM
+[2023-10-27 00:12:43,414] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129675 closing signal SIGTERM
+[rank: 0] Received SIGTERM: 15
+[rank: 1] Received SIGTERM: 15
+[rank: 2] Received SIGTERM: 15
+[rank: 3] Received SIGTERM: 15
+[2023-10-27 00:12:43,522] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129672 closing signal SIGTERM
+[2023-10-27 00:12:43,522] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129673 closing signal SIGTERM
+[2023-10-27 00:12:43,522] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129674 closing signal SIGTERM
+[2023-10-27 00:12:43,522] torch.distributed.elastic.multiprocessing.api: [WARNING] Sending process 129675 closing signal SIGTERM

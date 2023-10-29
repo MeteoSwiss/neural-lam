@@ -10,10 +10,8 @@ def main():
     parser = ArgumentParser(description='Training arguments')
     parser.add_argument('--dataset', type=str, default="meps_example",
                         help='Dataset to compute weights for (default: meps_example)')
-    # args = parser.parse_args()
-    # TODO: remove this line
-    args = parser.parse_args(args=['--dataset', 'cosmo'])
-
+    args = parser.parse_args()
+ 
     static_dir_path = os.path.join("data", args.dataset, "static")
 
     # -- Static grid node features --

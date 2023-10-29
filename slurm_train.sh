@@ -1,25 +1,26 @@
 #!/bin/bash
-#SBATCH --job-name=NeurWP
+#SBATCH --job-name=NeurWP16
 #SBATCH --partition=normal
 #SBATCH --account=s83
-#SBATCH --nodes=4
+#SBATCH --nodes=1
 #SBATCH --gres=gpu:4
 #SBATCH --time=23:59:00
-#SBATCH --output=logs/neurwp.out
-#SBATCH --error=logs/neurwp.err
-
-# set -x
+#SBATCH --output=logs/neurwp16.out
+#SBATCH --error=logs/neurwp16.err
+#SBATCH --exclusive
+#SBATCH --mem=490G
 
 # Load necessary modules
-source /scratch/e1000/meteoswiss/scratch/sadamov/mambaforge/etc/profile.d/conda.sh
-conda activate neural-lam
-
-# Set environment variables for DDP
-export MASTER_PORT=12355
-# export MASTER_ADDR=$(srun hostname -i | head -n 1)
+source ${SCRATCH}/miniforge3/etc/profile.d/conda.sh
+conda activate neural-ddp
 
 # Set OMP_NUM_THREADS to a value greater than 1
 export OMP_NUM_THREADS=4
 
+NUM_GPUS=$(echo $SLURM_JOB_GPUS | tr ',' '\n' | wc -l)
+
 # Run the script with torchrun
-torchrun --nproc_per_node=4 train_model.py
+srun torchrun --nnodes=$SLURM_NNODES --nproc_per_node=$NUM_GPUS train_model.py \
+    --dataset "cosmo" --subset_ds 0 --val_interval 27 --epochs 200 --n_workers 16 \
+    --batch_size 1 --model "graph_lam" \
+    --load "saved_models/graph_lam-4x64-10_27_23_01_46/min_val_loss.ckpt"

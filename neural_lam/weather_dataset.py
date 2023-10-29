@@ -1,6 +1,7 @@
 import glob
 import os
 
+import pytorch_lightning as pl
 import torch
 import xarray as xr
 
@@ -25,8 +26,8 @@ class WeatherDataset(torch.utils.data.Dataset):
         assert split in ("train", "val", "test"), "Unknown dataset split"
         self.sample_dir_path = os.path.join("data", dataset_name, "samples", split)
 
-        sample_paths = glob.glob(os.path.join(self.sample_dir_path, "laf*.nc"))
-        self.sample_names = [path.split("/")[-1][3:-8] for path in sample_paths]
+        sample_paths = sorted(glob.glob(os.path.join(self.sample_dir_path, "laf*.nc")))
+        self.sample_names = sorted([path.split("/")[-1][3:-8] for path in sample_paths])
         # Now on form "yyymmddhh_mbrXXX"
 
         if subset:
@@ -88,3 +89,59 @@ class WeatherDataset(torch.utils.data.Dataset):
         target_states = sample[2:]  # (sample_length-2, N_grid, d_features)
 
         return init_states, target_states
+
+
+class WeatherDataModule(pl.LightningDataModule):
+    def __init__(self, dataset_name, split="train", standardize=True,
+                 subset=False, batch_size=4, num_workers=16):
+        super().__init__()
+        self.dataset_name = dataset_name
+        self.batch_size = batch_size
+        self.num_workers = num_workers
+        self.standardize = standardize
+        self.subset = subset
+
+    def prepare_data(self):
+        # download, split, etc...
+        # called only on 1 GPU/TPU in distributed
+        pass
+
+    def setup(self, stage=None):
+        # make assignments here (val/train/test split)
+        # called on every process in DDP
+        if stage == 'fit' or stage is None:
+            self.train_dataset = WeatherDataset(
+                self.dataset_name,
+                split="train",
+                standardize=self.standardize,
+                subset=self.subset)
+            self.val_dataset = WeatherDataset(
+                self.dataset_name,
+                split="val",
+                standardize=self.standardize,
+                subset=self.subset)
+
+        if stage == 'test' or stage is None:
+            self.test_dataset = WeatherDataset(
+                self.dataset_name,
+                split="test",
+                standardize=self.standardize,
+                subset=self.subset)
+
+    def train_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.train_dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False, pin_memory=False,)
+
+    def val_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.val_dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False, pin_memory=False,
+            # persistent_workers=True,
+            # drop_last=True
+        )
+
+    def test_dataloader(self):
+        return torch.utils.data.DataLoader(
+            self.test_dataset, batch_size=self.batch_size, num_workers=self.num_workers,
+            shuffle=False, pin_memory=False)

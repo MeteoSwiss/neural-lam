@@ -20,29 +20,16 @@ def main():
         help='Step length in hours to consider single time step (default: 3)')
     parser.add_argument('--n_workers', type=int, default=4,
                         help='Number of workers in data loader (default: 4)')
-    # args = parser.parse_args()
-    # TODO Remove this
-    args = parser.parse_args(
-        args=['--dataset', 'cosmo', '--n_workers', '16'])
+    args = parser.parse_args()
 
     static_dir_path = os.path.join("data", args.dataset, "static")
 
-    # Define weights for each vertical level
-    level_weights = {
-        1: 1,
-        5: 1,
-        13: 1,
-        22: 1,
-        38: 1,
-        41: 1,
-        60: 1
-    }
-
+    # Define weights for each vertical level and parameter
     # Create parameter weights based on height
     w_list = []
-    for _ in constants.param_names_short:
-        for level in constants.vertical_levels:
-            w_list.append(level_weights[level])
+    for pw in constants.param_weights.values():
+        for lw in constants.level_weights.values():
+            w_list.append(pw * lw)
 
     w_list = np.array(w_list)
 
@@ -54,7 +41,10 @@ def main():
         w_list.astype('float32'))
 
     # Load dataset without any subsampling
-    ds = WeatherDataset(args.dataset, split="train", standardize=False)  # Without standardization
+    ds = WeatherDataset(
+        args.dataset,
+        split="train",
+        standardize=False)  # Without standardization
     loader = torch.utils.data.DataLoader(ds, args.batch_size, shuffle=False,
                                          num_workers=args.n_workers)
     # Compute mean and std.-dev. of each parameter (+ flux forcing) across full dataset

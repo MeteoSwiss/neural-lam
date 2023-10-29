@@ -1,4 +1,0 @@
-Loaded graph with 233541 nodes (226980 grid, 6561 mesh)
-Edges in subgraphs: m2m=57616, g2m=213432, m2g=907920
-Running evaluation on test
-Testing: |          | 0/? [00:00<?, ?it/s]Testing:   0%|          | 0/7 [00:00<?, ?it/s]Testing DataLoader 0:   0%|          | 0/7 [00:00<?, ?it/s]

@@ -6,14 +6,13 @@ import pytorch_lightning as pl
 import torch
 from lightning_fabric.utilities import seed
 from pytorch_lightning.utilities import rank_zero_only
-from torch.distributed import init_process_group
 
 import wandb
 from neural_lam import constants
 from neural_lam.models.graph_lam import GraphLAM
 from neural_lam.models.hi_lam import HiLAM
 from neural_lam.models.hi_lam_parallel import HiLAMParallel
-from neural_lam.weather_dataset import WeatherDataset
+from neural_lam.weather_dataset import WeatherDataModule
 
 MODELS = {
     "graph_lam": GraphLAM,
@@ -41,7 +40,12 @@ def init_wandb(args):
         prefix = prefix + f"eval-{args.eval}-"
     run_name = f"{prefix}{args.model}-{args.processor_layers}x{args.hidden_dim}-"\
         f"{time.strftime('%m_%d_%H_%M_%S')}"
-    wandb.init(project=constants.wandb_project, name=run_name, config=args)
+    wandb.init(
+        project=constants.wandb_project,
+        name=run_name,
+        config=args,
+        # mode="dryrun"
+    )
     logger = pl.loggers.WandbLogger(project=constants.wandb_project, name=run_name,
                                     config=args)
     return logger, run_name
@@ -56,8 +60,8 @@ def init_checkpoint_callback(run_name):
 
 
 def main():
-    if torch.cuda.is_available():
-        init_process_group(backend="nccl")
+    # if torch.cuda.is_available():
+    #     init_process_group(backend="nccl")
     parser = ArgumentParser(description='Train or evaluate NeurWP models for LAM')
 
     # General options
@@ -80,9 +84,6 @@ def main():
                         help='batch size (default: 4)')
     parser.add_argument('--load', type=str,
                         help='Path to load model parameters from (default: None)')
-    parser.add_argument(
-        '--restore_opt', type=int, default=0,
-        help='If optimizer state should be restored with model (default: 0 (false))')
     parser.add_argument(
         '--precision', type=str, default=32,
         help='Numerical precision to use for model (32/16/bf16) (default: 32)')
@@ -124,21 +125,7 @@ def main():
     parser.add_argument(
         '--n_example_pred', type=int, default=1,
         help='Number of example predictions to plot during evaluation (default: 1)')
-    # TODO Remove this
-    args = parser.parse_args(
-        args=[
-            '--dataset',
-            'cosmo',
-            '--subset_ds',
-            '1',
-            '--n_workers',
-            '128',
-            '--epochs',
-            '2',
-            '--batch_size',
-            '4',
-            '--model',
-            'hi_lam'])
+    args = parser.parse_args()
     # Asserts for arguments
     assert args.model in MODELS, f"Unknown model: {args.model}"
     assert args.step_length <= 3, "Too high step length"
@@ -147,25 +134,11 @@ def main():
     # Set seed
     seed.seed_everything(args.seed)
 
-    # Create dataset
-    train_dataset = WeatherDataset(
+    # Create datamodule
+    data_module = WeatherDataModule(
         args.dataset,
-        split="train",
-        subset=bool(
-            args.subset_ds))
-    val_dataset = WeatherDataset(args.dataset, split="val", subset=bool(args.subset_ds))
-
-    # Create the data loaders
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
+        subset=bool(args.subset_ds),
         batch_size=args.batch_size,
-        shuffle=False,  # set to False when using DistributedSampler
-        num_workers=args.n_workers
-    )
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=args.batch_size,
-        shuffle=False,  # set to False when using DistributedSampler
         num_workers=args.n_workers
     )
 
@@ -175,14 +148,7 @@ def main():
 
     # Load model parameters Use new args for model
     model_class = MODELS[args.model]
-    if args.load:
-        model = model_class.load_from_checkpoint(args.load, args=args)
-        if args.restore_opt:
-            # Save for later
-            # Unclear if this works for multi-GPU
-            model.opt_state = torch.load(args.load)["optimizer_states"][0]
-    else:
-        model = model_class(args)
+    model = model_class(args)
 
     result = init_wandb(args)
     if result is not None:
@@ -209,7 +175,6 @@ def main():
 
     trainer = pl.Trainer(
         max_epochs=args.epochs,
-        deterministic=True,
         logger=logger,
         log_every_n_steps=1,
         callbacks=[checkpoint_callback] if checkpoint_callback is not None else [],
@@ -219,31 +184,29 @@ def main():
         accelerator=accelerator,
         devices=devices,
         num_nodes=num_nodes,
+        profiler="simple",
+        # strategy="ddp",
+        # deterministic=True,
+        # limit_val_batches=0
+        # fast_dev_run=True
     )
     if args.eval:
-        if args.eval == "val":
-            eval_loader = val_loader
-        else:  # Test
-            # Create dataset
-            eval_dataset = WeatherDataset(
-                args.dataset, split="test", subset=bool(
-                    args.subset_ds))
-
-            # Create the data loader
-            eval_loader = torch.utils.data.DataLoader(
-                eval_dataset,
-                batch_size=args.batch_size,
-                shuffle=False,  # set to False when using DistributedSampler
-                num_workers=args.n_workers
-            )
-
         print_eval(args.eval)
-
-        trainer.test(model=model, dataloaders=eval_loader)
+        if args.eval == "val":
+            data_module.split = "val"
+        else:  # Test
+            data_module.split = "test"
+        trainer.test(model=model, datamodule=data_module, ckpt_path=args.load)
     else:
         # Train model
-        trainer.fit(model=model, train_dataloaders=train_loader,
-                    val_dataloaders=val_loader)
+        data_module.split = "train"
+        if args.load:
+            trainer.fit(model=model, datamodule=data_module, ckpt_path=args.load)
+        else:
+            trainer.fit(model=model, datamodule=data_module)
+
+    # Print profiler
+    print(trainer.profiler)
 
 
 if __name__ == "__main__":

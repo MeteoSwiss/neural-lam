@@ -26,9 +26,18 @@ param_units = [
     'K',
     'm/s',
     'm/s',
-    'g/g',
+    'Perc.',
 ]
 
+# Parameter weights
+param_weights = {
+    'T': 1,
+    'U': 1,
+    'V': 1,
+    'RELHUM': 1,
+}
+
+# Vertical levels
 vertical_levels = [
     1,
     5,
@@ -38,6 +47,17 @@ vertical_levels = [
     41,
     60
 ]
+
+# Vertical level weights
+level_weights = {
+    1: 1,
+    5: 1,
+    13: 1,
+    22: 1,
+    38: 1,
+    41: 1,
+    60: 1
+}
 
 # Projection and grid
 grid_shape = (582, 390)  # (x, y)

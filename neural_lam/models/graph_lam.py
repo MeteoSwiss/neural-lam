@@ -1,5 +1,6 @@
-import torch_geometric as pyg
+from multiprocessing import process
 import torch
+import torch_geometric as pyg
 
 from neural_lam import utils
 from neural_lam.interaction_net import InteractionNet
@@ -21,9 +22,9 @@ class GraphLAM(BaseGraphModel):
         # grid_dim from data + static + batch_static
         mesh_dim = self.mesh_static_features.shape[1]
         m2m_edges, m2m_dim = self.m2m_features.shape
-        if torch.distributed.get_rank() == 0:
+        if torch.distributed.get_rank == 0:
             print(f"Edges in subgraphs: m2m={m2m_edges}, g2m={self.g2m_edges}, "
-                f"m2g={self.m2g_edges}")
+                  f"m2g={self.m2g_edges}")
 
         # Define sub-models
         # Feature embedders for mesh
@@ -31,17 +32,27 @@ class GraphLAM(BaseGraphModel):
                                             self.mlp_blueprint_end)
         self.m2m_embedder = utils.make_mlp([m2m_dim] +
                                            self.mlp_blueprint_end)
+        self.args = args
 
+    def setup(self, stage=None):
+        super().setup(stage)
         # GNNs
         # processor
-        processor_nets = [InteractionNet(self.m2m_edge_index,
-                                         utils.make_mlp(self.edge_mlp_blueprint),
-                                         utils.make_mlp(self.aggr_mlp_blueprint),
-                                         aggr=args.mesh_aggr)
-                          for _ in range(args.processor_layers)]
+        processor_nets = [
+            InteractionNet(
+                self.m2m_edge_index.to(self.device),
+                utils.make_mlp(self.edge_mlp_blueprint).to(
+                    self.device),
+                utils.make_mlp(self.aggr_mlp_blueprint).to(
+                    self.device),
+                aggr=self.args.mesh_aggr)
+            for _ in range(self.args.processor_layers)]
         self.processor = pyg.nn.Sequential("x, edge_attr", [
             (net, "x, edge_attr -> x, edge_attr")
             for net in processor_nets])
+        # Move the entire processor to the device
+        for net in self.processor:
+            net.to(self.device)
 
     def get_num_mesh(self):
         """

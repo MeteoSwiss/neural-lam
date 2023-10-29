@@ -19,6 +19,7 @@ class ARModel(pl.LightningModule):
 
     def __init__(self, args):
         super().__init__()
+        
         self.save_hyperparameters()
         self.lr = args.lr
 
@@ -73,15 +74,20 @@ class ARModel(pl.LightningModule):
 
         self.plot_created = False
 
+    @pl.utilities.rank_zero_only
+    def log_image(self, name, img):
+        
+        wandb.log({name: wandb.Image(img)})
+
+    @pl.utilities.rank_zero_only
     def init_metrics(self):
         """
         Set up wandb metrics to track
         """
-        if torch.distributed.get_rank() == 0:
-            wandb.define_metric("val_mean_loss", summary="min")
+        
+        wandb.define_metric("val_mean_loss", summary="min")
         for step in self.val_step_log_errors:
-            if torch.distributed.get_rank() == 0:
-                wandb.define_metric(f"val_loss_unroll{step}", summary="min")
+            wandb.define_metric(f"val_loss_unroll{step}", summary="min")
         self.metrics_initialized = True  # Make sure this is done only once
 
     def configure_optimizers(self):
@@ -98,6 +104,14 @@ class ARModel(pl.LightningModule):
         """
         return x.unsqueeze(0).expand(batch_size, -1, -1)
 
+    def setup(self, stage=None):
+        self.loss = self.loss.to(self.device)
+        self.state_weight = self.state_weight.to(self.device)
+        self.border_mask = self.border_mask.to(self.device)
+        self.interior_mask = self.interior_mask.to(self.device)
+        self.data_mean = self.data_mean.to(self.device)
+        self.data_std = self.data_std.to(self.device)
+
     def predict_step(self, prev_state, prev_prev_state):
         """
         Step state one step ahead using prediction model, X_{t-1}, X_t -> X_t+1
@@ -106,6 +120,7 @@ class ARModel(pl.LightningModule):
         batch_static_features: (B, N_grid, batch_static_feature_dim)
         forcing: (B, N_grid, forcing_dim)
         """
+        
         raise NotImplementedError("No prediction step implemented")
 
     def unroll_prediction(self, init_states, true_states):
@@ -116,13 +131,11 @@ class ARModel(pl.LightningModule):
         forcing_features: (B, pred_steps, N_grid, d_static_f)
         true_states: (B, pred_steps, N_grid, d_f)
         """
+        
         prev_prev_state = init_states[:, 0]
         prev_state = init_states[:, 1]
         prediction_list = []
         pred_steps = true_states.shape[1]
-
-        self.border_mask = self.border_mask.to(self.device)
-        self.interior_mask = self.interior_mask.to(self.device)
 
         for i in range(pred_steps):
             border_state = true_states[:, i]
@@ -147,18 +160,20 @@ class ARModel(pl.LightningModule):
         prediction/target: (B, pred_steps, N_grid, d_f)
         returns (B, pred_steps)
         """
-        self.loss = self.loss.to(self.device)
-        self.state_weight = self.state_weight.to(self.device)
-
+        torch.autograd.set_detect_anomaly(True)
+        
         entry_loss = self.loss(prediction, target)  # (B, pred_steps, N_grid, d_f)
+        
         # (B, pred_steps, N_grid), weighted sum over features
         grid_node_loss = torch.sum(entry_loss * self.state_weight, dim=-1)
+        
         if not reduce_spatial_dim:
             return grid_node_loss  # (B, pred_steps, N_grid)
-
+        
         # Take (unweighted) mean over only non-border (interior) grid nodes
         time_step_loss = torch.sum(grid_node_loss * self.interior_mask[:, 0],
                                    dim=-1) / self.N_interior  # (B, pred_steps)
+        
 
         return time_step_loss  # (B, pred_steps)
 
@@ -173,6 +188,7 @@ class ARModel(pl.LightningModule):
         forcing_features: (B, pred_steps, N_grid, d_forcing), where index 0
             corresponds to index 1 of init_states
         """
+        
         init_states, target_states, = batch
 
         prediction = self.unroll_prediction(
@@ -184,12 +200,11 @@ class ARModel(pl.LightningModule):
         """
         Train on single batch
         """
+        
         prediction, target = self.common_step(batch)
-
         # Compute loss
         batch_loss = torch.mean(self.weighted_loss(
             prediction, target))  # mean over unrolled times and batch
-
         log_dict = {"train_loss": batch_loss}
         self.log_dict(
             log_dict,
@@ -205,6 +220,7 @@ class ARModel(pl.LightningModule):
         prediction/target: (B, pred_steps, N_grid, d_f)
         returns (B, pred_steps)
         """
+        
         if error == "mse":
             loss_func = torch.nn.functional.mse_loss
         else:
@@ -220,6 +236,7 @@ class ARModel(pl.LightningModule):
         """
         Run validation on single batch
         """
+        
         if not self.metrics_initialized:
             self.init_metrics()
 
@@ -243,8 +260,6 @@ class ARModel(pl.LightningModule):
         """
         Compute val metrics at the end of val epoch
         """
-        self.data_mean = self.data_mean.to(self.device)
-        self.data_std = self.data_std.to(self.device)
 
         val_mae_tensor = torch.cat(self.val_maes, dim=0)  # (N_val, pred_steps, d_f)
         val_mae_total = torch.mean(val_mae_tensor, dim=0)  # (pred_steps, d_f)
@@ -254,8 +269,7 @@ class ARModel(pl.LightningModule):
             # Don't log this during sanity checking
             mae_fig = vis.plot_error_map(val_mae_rescaled, title="Validation MAE",
                                          step_length=self.step_length)
-            if torch.distributed.get_rank() == 0:
-                wandb.log({"val_mae": wandb.Image(mae_fig)})
+            self.log_image("val_mae", mae_fig)
 
         self.val_maes.clear()  # Free memory
 
@@ -263,10 +277,7 @@ class ARModel(pl.LightningModule):
         """
         Run test on single batch
         """
-
-        self.data_mean = self.data_mean.to(self.device)
-        self.data_std = self.data_std.to(self.device)
-
+        
         prediction, target = self.common_step(batch)
 
         time_step_loss = torch.mean(self.weighted_loss(prediction,
@@ -298,7 +309,7 @@ class ARModel(pl.LightningModule):
                 constants.param_names_short,
                 constants.vertical_levels))
 
-        if torch.distributed.get_rank() == 0 and not self.plot_created:
+        if self.global_rank == 0 and not self.plot_created:
             self.plot_created = True
             # Plot example predictions
             if self.plotted_examples < self.n_example_pred:
@@ -334,7 +345,10 @@ class ARModel(pl.LightningModule):
                             for t_i, (pred_t, target_t) in enumerate(
                                     zip(pred_slice, target_slice), start=1):
                                 # Add vertical level to the plot title
-                                title = f"{var_name} ({var_unit}), level={var_level}, t={t_i} h"
+                                # This will add leading zeros to make t_i at least 2
+                                # digits long
+                                t_i_str = str(t_i).zfill(2)
+                                title = f"{var_name} ({var_unit}), level={var_level}, t={t_i_str} h"
 
                                 var_fig = vis.plot_prediction(
                                     pred_t[:, var_i], target_t[:, var_i],
@@ -343,7 +357,7 @@ class ARModel(pl.LightningModule):
                                     vrange=var_vrange
                                 )
                                 wandb.log(
-                                    {f"{var_name}_lvl_{var_level}_t_{t_i}": wandb.Image(var_fig)})
+                                    {f"{var_name}_lvl_{var_level}_t_{t_i_str}": wandb.Image(var_fig)})
 
                             # Close all figs for this time step, saves memory
                             plt.close("all")
@@ -357,68 +371,68 @@ class ARModel(pl.LightningModule):
                             wandb.run.dir,
                             f'example_target_{self.plotted_examples}.pt'))
 
+    @pl.utilities.rank_zero_only
     def on_test_epoch_end(self):
         """
         Compute test metrics and make plots at the end of test epoch
         """
-        if torch.distributed.get_rank() == 0:
-            # Create error maps for RMSE and MAE
-            test_mae_tensor = torch.cat(
-                self.test_maes, dim=0)  # (N_test, pred_steps, d_f)
-            test_mae_rescaled = torch.mean(test_mae_tensor,
-                                           dim=0) * self.data_std  # (pred_steps, d_f)
-            torch.cat(self.test_mses, dim=0)  # (N_test, pred_steps, d_f)
-            test_rmse_rescaled = torch.sqrt(
-                torch.mean(
-                    test_mae_tensor,
-                    dim=0)) * self.data_std  # (pred_steps, d_f)
+        
+        # Create error maps for RMSE and MAE
+        test_mae_tensor = torch.cat(
+            self.test_maes, dim=0)  # (N_test, pred_steps, d_f)
+        test_mae_rescaled = torch.mean(test_mae_tensor,
+                                       dim=0) * self.data_std  # (pred_steps, d_f)
+        torch.cat(self.test_mses, dim=0)  # (N_test, pred_steps, d_f)
+        test_rmse_rescaled = torch.sqrt(
+            torch.mean(
+                test_mae_tensor,
+                dim=0)) * self.data_std  # (pred_steps, d_f)
 
-            mae_fig = vis.plot_error_map(
-                test_mae_rescaled, step_length=self.step_length)
-            rmse_fig = vis.plot_error_map(
-                test_rmse_rescaled, step_length=self.step_length)
-            wandb.log({  # Log png:s
-                "test_mae": wandb.Image(mae_fig),
-                "test_rmse": wandb.Image(rmse_fig),
-            })
-            # Save pdf:s
-            mae_fig.savefig(os.path.join(wandb.run.dir, "test_mae.pdf"))
-            rmse_fig.savefig(os.path.join(wandb.run.dir, "test_rmse.pdf"))
-            # Save errors also as csv:s
-            np.savetxt(os.path.join(wandb.run.dir, "test_mae.csv"),
-                       test_mae_rescaled.cpu().numpy(), delimiter=",")
-            np.savetxt(os.path.join(wandb.run.dir, "test_rmse.csv"),
-                       test_rmse_rescaled.cpu().numpy(), delimiter=",")
+        mae_fig = vis.plot_error_map(
+            test_mae_rescaled, step_length=self.step_length)
+        rmse_fig = vis.plot_error_map(
+            test_rmse_rescaled, step_length=self.step_length)
+        wandb.log({  # Log png:s
+            "test_mae": wandb.Image(mae_fig),
+            "test_rmse": wandb.Image(rmse_fig),
+        })
+        # Save pdf:s
+        mae_fig.savefig(os.path.join(wandb.run.dir, "test_mae.pdf"))
+        rmse_fig.savefig(os.path.join(wandb.run.dir, "test_rmse.pdf"))
+        # Save errors also as csv:s
+        np.savetxt(os.path.join(wandb.run.dir, "test_mae.csv"),
+                   test_mae_rescaled.cpu().numpy(), delimiter=",")
+        np.savetxt(os.path.join(wandb.run.dir, "test_rmse.csv"),
+                   test_rmse_rescaled.cpu().numpy(), delimiter=",")
 
-            self.test_maes.clear()  # Free memory
-            self.test_mses.clear()
+        self.test_maes.clear()  # Free memory
 
-            # Plot spatial loss maps
-            spatial_loss_tensor = torch.cat(self.spatial_loss_maps,
-                                            dim=0)  # (N_test, N_log, N_grid)
-            mean_spatial_loss = torch.mean(
-                spatial_loss_tensor, dim=0)  # (N_log, N_grid)
+        # Plot spatial loss maps
+        spatial_loss_tensor = torch.cat(self.spatial_loss_maps,
+                                        dim=0)  # (N_test, N_log, N_grid)
+        mean_spatial_loss = torch.mean(
+            spatial_loss_tensor, dim=0)  # (N_log, N_grid)
 
-            loss_map_figs = [vis.plot_spatial_error(
-                loss_map, self.interior_mask[:, 0],
-                title=f"Test loss, t={t_i} ({self.step_length*t_i} h)")
-                for t_i,
-                loss_map in zip(self.val_step_log_errors, mean_spatial_loss)]
+        loss_map_figs = [vis.plot_spatial_error(
+            loss_map, self.interior_mask[:, 0],
+            title=f"Test loss, t={t_i} ({self.step_length*t_i} h)")
+            for t_i,
+            loss_map in zip(self.val_step_log_errors, mean_spatial_loss)]
 
-            # log all to same wandb key, sequentially
-            for fig in loss_map_figs:
-                wandb.log({"test_loss": wandb.Image(fig)})
+        # log all to same wandb key, sequentially
+        for fig in loss_map_figs:
+            wandb.log({"test_loss": wandb.Image(fig)})
 
-            # also make without title and save as pdf
-            pdf_loss_map_figs = [
-                vis.plot_spatial_error(loss_map, self.interior_mask[:, 0])
-                for loss_map in mean_spatial_loss]
-            pdf_loss_maps_dir = os.path.join(wandb.run.dir, "spatial_loss_maps")
-            os.makedirs(pdf_loss_maps_dir, exist_ok=True)
-            for t_i, fig in zip(self.val_step_log_errors, pdf_loss_map_figs):
-                fig.savefig(os.path.join(pdf_loss_maps_dir, f"loss_t{t_i}.pdf"))
-            # save mean spatial loss as .pt file also
-            torch.save(mean_spatial_loss.cpu(), os.path.join(
-                wandb.run.dir, 'mean_spatial_loss.pt'))
+        # also make without title and save as pdf
+        pdf_loss_map_figs = [
+            vis.plot_spatial_error(loss_map, self.interior_mask[:, 0])
+            for loss_map in mean_spatial_loss]
+        pdf_loss_maps_dir = os.path.join(wandb.run.dir, "spatial_loss_maps")
+        os.makedirs(pdf_loss_maps_dir, exist_ok=True)
+        for t_i, fig in zip(self.val_step_log_errors, pdf_loss_map_figs):
+            fig.savefig(os.path.join(pdf_loss_maps_dir, f"loss_t{t_i}.pdf"))
+        # save mean spatial loss as .pt file also
+        torch.save(mean_spatial_loss.cpu(), os.path.join(
+            wandb.run.dir, 'mean_spatial_loss.pt'))
 
-            self.spatial_loss_maps.clear()
+        self.spatial_loss_maps.clear()

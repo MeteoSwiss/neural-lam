@@ -1,3 +1,4 @@
+from turtle import setup
 import torch
 import torch.distributed as dist
 import torch_geometric as pyg
@@ -15,26 +16,9 @@ class InteractionNet(pyg.nn.MessagePassing):
         self.edge_index = edge_index
         self.edge_mlp = edge_mlp
         self.aggr_mlp = aggr_mlp
-        if torch.cuda.is_available():
-            # Get the rank of the current process
-            rank = dist.get_rank()
-            # Get the world size
-            world_size = dist.get_world_size()
-            # Calculate the local rank
-            local_rank = rank % world_size
-            # Set the CUDA device to the local rank
-            torch.cuda.set_device(local_rank)
-            self.device = torch.device(f"cuda:{local_rank}")
-        else:
-            self.device = torch.device("cpu")
 
     def forward(self, x, edge_attr):
-
-        self.edge_mlp = self.edge_mlp.to(self.device)
-        self.aggr_mlp = self.aggr_mlp.to(self.device)
-        x = torch.stack([xi.to(self.device) for xi in x])
-        edge_attr = torch.stack([ea.to(self.device) for ea in edge_attr])
-        self.edge_index = torch.stack([ei.to(self.device) for ei in self.edge_index])
+        self.edge_index = self.edge_index.to(x.device)
 
         edge_rep_aggr, edge_rep = self.propagate(self.edge_index, x=x,
                                                  edge_attr=edge_attr)
@@ -69,7 +53,6 @@ class EncoderInteractionNet(InteractionNet):
 
     def __init__(self, edge_index, edge_mlp, aggr_mlp, grid_mlp, N_mesh, N_mesh_ignore):
         super().__init__(edge_index, edge_mlp, aggr_mlp)
-
         self.grid_mlp = grid_mlp
         self.N_mesh = N_mesh
         # Number of mesh nodes to not use (e.g. higher level in hierarchy)
@@ -81,13 +64,7 @@ class EncoderInteractionNet(InteractionNet):
         return super().aggregate(messages, index, ptr, self.N_mesh_encode)
 
     def forward(self, x, edge_attr):
-        self.grid_mlp = self.grid_mlp.to(self.device)
-        self.edge_mlp = self.edge_mlp.to(self.device)
-        self.aggr_mlp = self.aggr_mlp.to(self.device)
-        x = torch.stack([xi.to(self.device) for xi in x])
-        edge_attr = torch.stack([ea.to(self.device) for ea in edge_attr])
-        self.edge_index = torch.stack([ei.to(self.device) for ei in self.edge_index])
-
+        self.edge_index = self.edge_index.to(x.device)
         mesh_edge_rep_aggr, _ = self.propagate(self.edge_index, x=x,
                                                edge_attr=edge_attr)
 
@@ -123,17 +100,11 @@ class DecoderInteractionNet(InteractionNet):
         self.N_grid = N_grid
 
     def aggregate(self, messages, index, ptr, dim_size):
-        # Force to only aggregate to grid nodes
         shifted_index = index - self.N_mesh  # Shift N_mesh->0 so we start aggr. to grid
         return super().aggregate(messages, shifted_index, ptr, self.N_grid)
 
     def forward(self, x, edge_attr):
-
-        self.edge_mlp = self.edge_mlp.to(self.device)
-        self.aggr_mlp = self.aggr_mlp.to(self.device)
-        x = torch.stack([xi.to(self.device) for xi in x])
-        edge_attr = torch.stack([ea.to(self.device) for ea in edge_attr])
-        self.edge_index = torch.stack([ei.to(self.device) for ei in self.edge_index])
+        self.edge_index = self.edge_index.to(x.device)
 
         grid_edge_rep_aggr, _ = self.propagate(self.edge_index, x=x,
                                                edge_attr=edge_attr)
@@ -172,6 +143,8 @@ class MeshInitNet(InteractionNet):
         x: (B, N_mesh[l-1]+N_mesh[l], d_h)
         edge_attr: (B, M_up[l-1 -> l], d_h)
         """
+        self.edge_index = self.edge_index.to(x.device)
+
         top_level_aggr, edge_rep = self.propagate(self.edge_index, x=x,
                                                   edge_attr=edge_attr)
 
@@ -200,6 +173,8 @@ class MeshReadOutNet(InteractionNet):
         return super().aggregate(messages, index, ptr, self.N_to_nodes)
 
     def forward(self, x, edge_attr):
+        self.edge_index = self.edge_index.to(x.device)
+
         to_aggr, _ = self.propagate(self.edge_index, x=x,
                                     edge_attr=edge_attr)
 
@@ -228,6 +203,8 @@ class MeshDownNet(InteractionNet):
         return super().aggregate(messages, index, ptr, self.N_to_nodes)
 
     def forward(self, x, edge_attr):
+        self.edge_index = self.edge_index.to(x.device)
+
         to_aggr, edge_rep = self.propagate(self.edge_index, x=x,
                                            edge_attr=edge_attr)
 
@@ -251,7 +228,6 @@ class HiInteractionNet(InteractionNet):
     def __init__(self, edge_index, edge_mlp, aggr_mlp, edge_split_sections,
                  node_split_sections, aggr="sum"):
         super().__init__(edge_index, edge_mlp, aggr_mlp, aggr="sum")
-
         # Note that in this class edge_mlp and aggr_mlp are lists of mlp
         # Overwrite to put in ModuleLists
         self.edge_mlp = torch.nn.ModuleList(edge_mlp)
@@ -267,6 +243,8 @@ class HiInteractionNet(InteractionNet):
         x: (B, N_mesh, d_h)
         edge_attr: (B, M_up + M_down + M_same, d_h)
         """
+        self.edge_index = self.edge_index.to(x.device)
+
         edge_rep_aggr, edge_rep = self.propagate(self.edge_index, x=x,
                                                  edge_attr=edge_attr)
 

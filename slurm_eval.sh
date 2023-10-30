@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=NeurWP
+#SBATCH --job-name=NeurWPe
 #SBATCH --partition=normal
 #SBATCH --account=s83
 #SBATCH --nodes=1

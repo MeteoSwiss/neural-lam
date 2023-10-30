@@ -42,15 +42,15 @@ class ARModel(pl.LightningModule):
             self.loss = nn.MSELoss(reduction="none")
 
             inv_var = self.step_diff_std**-2.
-            self.state_weight = constants.param_weights * inv_var  # (d_f,)
+            state_weight = self.param_weights * inv_var  # (d_f,)
         elif args.loss == "mae":
             self.loss = nn.L1Loss(reduction="none")
 
             # Weight states with inverse std instead in this case
-            self.state_weight = constants.param_weights / self.step_diff_std  # (d_f,)
+            state_weight = self.param_weights / self.step_diff_std  # (d_f,)
         else:
             assert False, f"Unknown loss function: {args.loss}"
-        self.register_buffer("state_weight", self.state_weight, persistent=False)
+        self.register_buffer("state_weight", state_weight, persistent=False)
 
         # Pre-compute interior mask for use in loss function
         self.interior_mask = 1. - self.border_mask  # (N_grid, 1), 1 for non-border
@@ -106,11 +106,7 @@ class ARModel(pl.LightningModule):
 
     def setup(self, stage=None):
         self.loss = self.loss.to(self.device)
-        self.state_weight = self.state_weight.to(self.device)
-        self.border_mask = self.border_mask.to(self.device)
         self.interior_mask = self.interior_mask.to(self.device)
-        self.data_mean = self.data_mean.to(self.device)
-        self.data_std = self.data_std.to(self.device)
 
     def predict_step(self, prev_state, prev_prev_state):
         """
@@ -274,11 +270,12 @@ class ARModel(pl.LightningModule):
             val_mae_total = torch.mean(val_mae_tensor, dim=0)  # (pred_steps, d_f)
             val_mae_rescaled = val_mae_total * self.data_std  # (pred_steps, d_f)
 
-        if not self.trainer.sanity_checking:
-            # Don't log this during sanity checking
-            mae_fig = vis.plot_error_map(val_mae_rescaled, title="Validation MAE",
-                                         step_length=self.step_length)
-            self.log_image("val_mae", mae_fig)
+            if not self.trainer.sanity_checking:
+                # Don't log this during sanity checking
+                mae_fig = vis.plot_error_map(val_mae_rescaled, title="Validation MAE",
+                                             step_length=self.step_length)
+                self.log_image("val_mae", mae_fig)
+                plt.close("all")
 
         self.val_maes.clear()  # Free memory
 
@@ -390,12 +387,13 @@ class ARModel(pl.LightningModule):
         # Create error maps for RMSE and MAE
         test_mae_tensor = self.all_gather_cat(
             torch.cat(self.test_maes, dim=0))  # (N_test, pred_steps, d_f)
-        test_mse_tensor = self.all_gather_cat(
-            torch.cat(self.test_mses, dim=0))  # (N_test, pred_steps, d_f)
+        # test_mse_tensor = self.all_gather_cat(
+        #     torch.cat(self.test_mses, dim=0))  # (N_test, pred_steps, d_f)
 
         if self.trainer.is_global_zero:
             test_mae_rescaled = torch.mean(test_mae_tensor,
                                            dim=0) * self.data_std  # (pred_steps, d_f)
+            #BUG: does that work?
             test_rmse_rescaled = torch.sqrt(
                 torch.mean(
                     test_mae_tensor,

@@ -159,7 +159,7 @@ def main():
 
     checkpoint_callback = init_checkpoint_callback(run_name)
 
-    utils.init_wandb_metrics() # Do after wandb.init
+    utils.init_wandb_metrics()  # Do after wandb.init
 
     if args.eval:
         use_distributed_sampler = False

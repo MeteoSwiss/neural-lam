@@ -10,6 +10,7 @@ class BaseHiGraphModel(BaseGraphModel):
     """
     Base class for hierarchical graph models.
     """
+
     def __init__(self, args):
         super().__init__(args)
 
@@ -19,19 +20,19 @@ class BaseHiGraphModel(BaseGraphModel):
 
         # Number of mesh nodes at each level
         self.N_mesh_levels = [mesh_feat.shape[0] for mesh_feat in
-                self.mesh_static_features] # Needs as python list for later
+                              self.mesh_static_features]  # Needs as python list for later
         N_mesh_levels_torch = torch.tensor(self.N_mesh_levels)
 
         # Print some useful info
         print("Loaded hierachical graph with structure:")
-        for l, N_level in enumerate(self.N_mesh_levels):
-            same_level_edges = self.m2m_features[l].shape[0]
-            print(f"level {l} - {N_level} nodes, {same_level_edges} same-level edges")
+        for ll, N_level in enumerate(self.N_mesh_levels):
+            same_level_edges = self.m2m_features[ll].shape[0]
+            print(f"level {ll} - {N_level} nodes, {same_level_edges} same-level edges")
 
-            if l < (self.N_levels - 1):
-                up_edges = self.mesh_up_features[l].shape[0]
-                down_edges = self.mesh_down_features[l].shape[0]
-                print(f"  {l}<->{l+1} - {up_edges} up edges, {down_edges} down edges")
+            if ll < (self.N_levels - 1):
+                up_edges = self.mesh_up_features[ll].shape[0]
+                down_edges = self.mesh_down_features[ll].shape[0]
+                print(f"  {ll}<->{ll+1} - {up_edges} up edges, {down_edges} down edges")
 
         # Embedders
         # Assume all levels have same static feature dimensionality
@@ -59,7 +60,7 @@ class BaseHiGraphModel(BaseGraphModel):
         first_index_levels = torch.cat((
             torch.zeros(1, dtype=torch.int64),
             torch.cumsum(N_mesh_levels_torch, dim=0)
-            ), dim=0)
+        ), dim=0)
         self.register_buffer("first_index_levels", first_index_levels, persistent=False)
 
         # Init GNNs

@@ -1,7 +1,6 @@
 <p align="middle">
     <img src="figures/neural_lam_header.png" width="700">
 </p>
-
 Neural-LAM is a repository of graph-based neural weather prediction models for Limited Area Modeling (LAM).
 The code uses [PyTorch](https://pytorch.org/) and [PyTorch Lightning](https://lightning.ai/pytorch-lightning).
 Graph Neural Networks are implemented using [PyG](https://pyg.org/) and logging is set up through [Weights & Biases](https://wandb.ai/).
@@ -27,6 +26,8 @@ We plan to continue updating this repository as we improve existing models and d
 Collaborations around this implementation are very welcome.
 If you are working with Neural-LAM feel free to get in touch and/or submit pull requests to the repository.
 
+<span style="color:#98FF98;">Additions relevant to the COSMO Neural-LAM implementation are highlighted in __green__.</span>
+
 # Modularity
 The Neural-LAM code is designed to modularize the different components involved in training and evaluating neural weather prediction models.
 Models, graphs and data are stored separately and it should be possible to swap out individual components.
@@ -48,10 +49,30 @@ If there is interest to use Neural-LAM for other areas it is not a substantial u
 We would be happy to support such enhancements.
 See the issues https://github.com/joeloskarsson/neural-lam/issues/2, https://github.com/joeloskarsson/neural-lam/issues/3 and https://github.com/joeloskarsson/neural-lam/issues/4 for some initial ideas on how this could be done.
 
+<span style="color:#98FF98;">
+
+For the COSMO implementation some additional settings can be defined in `neural_lam/constants`. Most of the code should take user input either from `neural_lam/constants` or directly from command-line argument parsing. Would certainly be worth the effort to make the code fully area-agnostic.
+
+</span>
+
 # Using Neural-LAM
 Below follows instructions on how to use Neural-LAM to train and evaluate models.
 
 ## Installation
+
+<span style="color:#98FF98;">
+
+For COSMO we use conda to avoid the Cartopy installation issues and because conda environments usually work well on the vCluster called Balfrin.cscs.ch.
+
+1. Simply run `conda env create -f environment.yml` to create the environment.
+2. Activate the environment with `conda activate neural-lam`.
+3. Happy Coding \o/
+
+Note that only the cuda version is pinned to 11.8, otherwise all the latest libraries are installed. This might break in the future and must be adjusted to the users conda version.
+
+</span>
+
+\
 Follow the steps below to create the neccesary python environment.
 
 1. Install GEOS for your system. For example with `sudo apt-get install libgeos-dev`. This is neccesary for the Cartopy requirement.
@@ -79,6 +100,12 @@ All graphs used in the paper are also available for download at the same link (b
 Note that this is far too little data to train any useful models, but all scripts can be ran with it.
 It should thus be useful to make sure that your python environment is set up correctly and that all the code can be ran without any issues.
 
+<span style="color:#98FF98;">
+
+For COSMO the data is stored in the `data` folder with the same structure, but called `cosmo`. The data will be open-source someday but for now we cannot share the data outside of our vCluster. A tiny example dataset could probably be made available.
+
+</span>
+
 ## Pre-processing
 An overview of how the different scripts and files depend on each other is given in this figure:
 <p align="middle">
@@ -89,6 +116,12 @@ In order to start training models at least three pre-processing scripts have to 
 * `create_mesh.py`
 * `create_grid_features.py`
 * `create_parameter_weights.py`
+
+<span style="color:#98FF98;">
+
+For COSMO also run `create_static_features.py` to create the static features for the graph nodes.
+
+</span>
 
 ### Create graph
 Run `create_mesh.py` with suitable options to generate the graph you want to use (see `python create_mesh.py --help` for a list of options).
@@ -130,6 +163,21 @@ A few of the key ones are outlined below:
 * `--graph`: Which graph to use with the model
 * `--processor_layers`: Number of GNN layers to use in the processing part of the model
 * `--ar_steps`: Number of time steps to unroll for when making predictions and computing the loss
+
+<span style="color:#98FF98;">
+
+For COSMO three simple slurm sbatch scripts are available for training/evaluating/debugging the model. You can launch either of these jobs respectively with:
+
+```
+sbatch slurm_train.sh
+sbatch slurm_eval.sh
+sbatch slurm_debug.sh
+```
+
+This will train the model using the same seed and data as seen in the figures on wandb.
+
+</span>
+
 
 Checkpoints of trained models are stored in the `saved_models` directory.
 The implemented models are:

@@ -10,7 +10,6 @@ class BaseHiGraphModel(BaseGraphModel):
     """
     Base class for hierarchical graph models.
     """
-
     def __init__(self, args):
         super().__init__(args)
 
@@ -20,7 +19,7 @@ class BaseHiGraphModel(BaseGraphModel):
 
         # Number of mesh nodes at each level
         self.N_mesh_levels = [mesh_feat.shape[0] for mesh_feat in
-                              self.mesh_static_features]  # Needs as python list for later
+                self.mesh_static_features] # Needs as python list for later
         N_mesh_levels_torch = torch.tensor(self.N_mesh_levels)
 
         # Print some useful info
@@ -57,10 +56,11 @@ class BaseHiGraphModel(BaseGraphModel):
 
         # Instantiate GNNs
         # First node index at each level
-        self.first_index_levels = torch.cat((
+        first_index_levels = torch.cat((
             torch.zeros(1, dtype=torch.int64),
             torch.cumsum(N_mesh_levels_torch, dim=0)
-        ), dim=0)
+            ), dim=0)
+        self.register_buffer("first_index_levels", first_index_levels, persistent=False)
 
         # Init GNNs
         self.mesh_init_gnns = nn.ModuleList([MeshInitNet(

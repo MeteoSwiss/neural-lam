@@ -8,7 +8,7 @@ from lightning_fabric.utilities import seed
 from pytorch_lightning.utilities import rank_zero_only
 
 import wandb
-from neural_lam import constants
+from neural_lam import constants, utils
 from neural_lam.models.graph_lam import GraphLAM
 from neural_lam.models.hi_lam import HiLAM
 from neural_lam.models.hi_lam_parallel import HiLAMParallel
@@ -158,6 +158,8 @@ def main():
         run_name = None
 
     checkpoint_callback = init_checkpoint_callback(run_name)
+
+    utils.init_wandb_metrics() # Do after wandb.init
 
     if args.eval:
         use_distributed_sampler = False

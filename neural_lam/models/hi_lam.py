@@ -12,7 +12,6 @@ class HiLAM(BaseHiGraphModel):
     the hierarchy during processing.
     The Hi-LAM model from Oskarsson et al. (2023)
     """
-
     def __init__(self, args):
         super().__init__(args)
 

@@ -36,8 +36,8 @@ class WeatherDataset(torch.utils.data.Dataset):
         # Set up for standardization
         self.standardize = standardize
         if standardize:
-            self.data_mean, self.data_std =\
-                utils.load_dataset_stats(dataset_name, "cpu")
+            ds_stats = utils.load_dataset_stats(dataset_name, "cpu")
+            self.data_mean, self.data_std = ds_stats["data_mean"], ds_stats["data_std"]
 
         # If subsample index should be sampled (only duing training)
         self.random_subsample = split == "train"

@@ -45,7 +45,8 @@ Currently we are using these models on a limited area covering the Nordic region
 There are still some parts of the code that is quite specific for the MEPS area use case.
 This is in particular true for the mesh graph creation (`create_mesh.py`) and some of the constants used (`neural_lam/constants.py`).
 If there is interest to use Neural-LAM for other areas it is not a substantial undertaking to refactor the code to be fully area-agnostic.
-We would be happy to assist with such changes.
+We would be happy to support such enhancements.
+See the issues https://github.com/joeloskarsson/neural-lam/issues/2, https://github.com/joeloskarsson/neural-lam/issues/3 and https://github.com/joeloskarsson/neural-lam/issues/4 for some initial ideas on how this could be done.
 
 # Using Neural-LAM
 Below follows instructions on how to use Neural-LAM to train and evaluate models.
@@ -69,7 +70,14 @@ You will have to adjust the `CUDA` variable to match the CUDA version on your sy
 
 ## Data
 Datasets should be stored in a directory called `data`.
-We are working on releasing a small example dataset that can be used to try out Neural-LAM.
+See the [repository format section](#format-of-data-directory) for details on the directory structure.
+
+The full MEPS dataset can be shared with other researchers on request, contact us for this.
+A tiny subset of the data (named `meps_example`) is available in `example_data.zip`, which can be downloaded from [here](https://liuonline-my.sharepoint.com/:f:/g/personal/joeos82_liu_se/EuiUuiGzFIFHruPWpfxfUmYBSjhqMUjNExlJi9W6ULMZ1w?e=97pnGX).
+Download the file and unzip in the neural-lam directory.
+All graphs used in the paper are also available for download at the same link (but can as easily be re-generated using `create_mesh.py`).
+Note that this is far too little data to train any useful models, but all scripts can be ran with it.
+It should thus be useful to make sure that your python environment is set up correctly and that all the code can be ran without any issues.
 
 ## Pre-processing
 An overview of how the different scripts and files depend on each other is given in this figure:
@@ -158,6 +166,8 @@ To train Hi-LAM-Parallel use
 python train_model.py --model hi_lam_parallel --graph hierarchical ...
 ```
 
+Checkpoint files for our models trained on the MEPS data are available upon request.
+
 ## Evaluate Models
 Evaluation is also done using `train_model.py`, but using the `--eval` option.
 Use `--eval val` to evaluate the model on the validation set and `--eval test` to evaluate on test data.
@@ -166,6 +176,8 @@ Some options specifically important for evaluation are:
 
 * `--load`: Path to model checkpoint file (`.ckpt`) to load parameters from
 * `--n_example_pred`: Number of example predictions to plot during evaluation.
+
+**Note:** While it is technically possible to use multiple GPUs for running evaluation, this is strongly discouraged. If using multiple devices the `DistributedSampler` will replicate some samples to make sure all devices have the same batch size, meaning that evaluation metrics will be unreliable. This issue stems from PyTorch Lightning. See for example [this draft PR](https://github.com/Lightning-AI/torchmetrics/pull/1886) for more discussion and ongoing work to remedy this.
 
 # Repository Structure
 Except for training and pre-processing scripts all the source code can be found in the `neural_lam` directory.

@@ -4,9 +4,12 @@ import numpy as np
 import torch
 import torch.nn as nn
 from tueplots import bundles, figsizes
+import wandb
+from pytorch_lightning.utilities import rank_zero_only
 
+from neural_lam import constants
 
-def load_dataset_stats(dataset_name, device):
+def load_dataset_stats(dataset_name, device="cpu"):
     static_dir_path = os.path.join("data", dataset_name, "static")
 
     def loads_file(fn):
@@ -17,8 +20,14 @@ def load_dataset_stats(dataset_name, device):
 
     return data_mean, data_std
 
+    return {
+        "data_mean": data_mean,
+        "data_std": data_std,
+        # "flux_mean": flux_mean,
+        # "flux_std": flux_std,
+    }
 
-def load_static_data(dataset_name, device):
+def load_static_data(dataset_name, device="cpu"):
     static_dir_path = os.path.join("data", dataset_name, "static")
 
     def loads_file(fn):
@@ -48,11 +57,40 @@ def load_static_data(dataset_name, device):
         dtype=torch.float32,
         device=device)  # (d_f,)
 
-    return border_mask, grid_static_features, step_diff_mean, step_diff_std, data_mean, \
-        data_std, param_weights
+    return {
+        "border_mask": border_mask,
+        "grid_static_features": grid_static_features,
+        "step_diff_mean": step_diff_mean,
+        "step_diff_std": step_diff_std,
+        "data_mean": data_mean,
+        "data_std": data_std,
+        "param_weights": param_weights,
+    }
 
+class BufferList(nn.Module):
+    """
+    A list of torch buffer tensors that sit together as a Module with no parameters and only
+    buffers.
 
-def load_graph(graph_name, device):
+    This should be replaced by a native torch BufferList once implemented.
+    See: https://github.com/pytorch/pytorch/issues/37386
+    """
+    def __init__(self, buffer_tensors, persistent=True):
+        super().__init__()
+        self.n_buffers = len(buffer_tensors)
+        for buffer_i, tensor in enumerate(buffer_tensors):
+            self.register_buffer(f"b{buffer_i}", tensor, persistent=persistent)
+
+    def __getitem__(self, key):
+        return getattr(self, f"b{key}")
+
+    def __len__(self):
+        return self.n_buffers
+
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
+
+def load_graph(graph_name, device="cpu"):
     # Define helper lambda function
     graph_dir_path = os.path.join("graphs", graph_name)
 
@@ -60,7 +98,8 @@ def load_graph(graph_name, device):
         return torch.load(os.path.join(graph_dir_path, fn), map_location=device)
 
     # Load edges (edge_index)
-    m2m_edge_index = loads_file("m2m_edge_index.pt")  # List of (2, M_m2m[l])
+    m2m_edge_index = BufferList(loads_file("m2m_edge_index.pt"),
+            persistent=False) # List of (2, M_m2m[l])
     g2m_edge_index = loads_file("g2m_edge_index.pt")  # (2, M_g2m)
     m2g_edge_index = loads_file("m2g_edge_index.pt")  # (2, M_m2g)
 
@@ -73,10 +112,10 @@ def load_graph(graph_name, device):
     m2g_features = loads_file("m2g_features.pt")  # (M_m2g, d_edge_f)
 
     # Normalize by dividing with longest edge (found in m2m)
-    longest_edge = max([torch.max(level_features[:, 0])
-                        for level_features in m2m_features])  # Col. 0 is length
-    m2m_features = [level_features / longest_edge
-                    for level_features in m2m_features]
+    longest_edge = max([torch.max(level_features[:,0])
+        for level_features in m2m_features]) # Col. 0 is length
+    m2m_features = BufferList([level_features / longest_edge
+        for level_features in m2m_features], persistent=False)
     g2m_features = g2m_features / longest_edge
     m2g_features = m2g_features / longest_edge
 
@@ -90,9 +129,10 @@ def load_graph(graph_name, device):
 
     if hierarchical:
         # Load up and down edges and features
-        mesh_up_edge_index = loads_file("mesh_up_edge_index.pt")  # List of (2, M_up[l])
-        mesh_down_edge_index = loads_file("mesh_down_edge_index.pt"
-                                          )  # List of (2, M_down[l])
+        mesh_up_edge_index = BufferList(loads_file("mesh_up_edge_index.pt"),
+                persistent=False) # List of (2, M_up[l])
+        mesh_down_edge_index = BufferList(loads_file("mesh_down_edge_index.pt"),
+                persistent=False) # List of (2, M_down[l])
 
         mesh_up_features = loads_file("mesh_up_features.pt"
                                       )  # List of (M_up[l], d_edge_f)
@@ -100,10 +140,12 @@ def load_graph(graph_name, device):
                                         )  # List of (M_down[l], d_edge_f)
 
         # Rescale
-        mesh_up_features = [edge_features / longest_edge
-                            for edge_features in mesh_up_features]
-        mesh_down_features = [edge_features / longest_edge
-                              for edge_features in mesh_down_features]
+        mesh_up_features = BufferList([edge_features / longest_edge
+                for edge_features in mesh_up_features], persistent=False)
+        mesh_down_features = BufferList([edge_features / longest_edge
+                for edge_features in mesh_down_features])
+
+        mesh_static_features = BufferList(mesh_static_features)
     else:
         # Extract single mesh level
         m2m_edge_index = m2m_edge_index[0]
@@ -120,6 +162,19 @@ def load_graph(graph_name, device):
         mesh_up_features, mesh_down_features, \
         mesh_static_features
 
+    return hierarchical, {
+            "g2m_edge_index": g2m_edge_index,
+            "m2g_edge_index": m2g_edge_index,
+            "m2m_edge_index": m2m_edge_index,
+            "mesh_up_edge_index": mesh_up_edge_index,
+            "mesh_down_edge_index": mesh_down_edge_index,
+            "g2m_features": g2m_features,
+            "m2g_features": m2g_features,
+            "m2m_features": m2m_features,
+            "mesh_up_features": mesh_up_features,
+            "mesh_down_features": mesh_down_features,
+            "mesh_static_features": mesh_static_features,
+    }
 
 def make_mlp(blueprint, layer_norm=True):
     """
@@ -156,3 +211,12 @@ def fractional_plot_bundle(fraction):
     original_figsize = bundle["figure.figsize"]
     bundle["figure.figsize"] = (original_figsize[0] / fraction, original_figsize[1])
     return bundle
+
+@rank_zero_only
+def init_wandb_metrics():
+    """
+    Set up wandb metrics to track
+    """
+    wandb.define_metric("val_mean_loss", summary="min")
+    for step in constants.val_step_log_errors:
+        wandb.define_metric(f"val_loss_unroll{step}", summary="min")

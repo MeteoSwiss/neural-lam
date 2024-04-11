@@ -204,7 +204,7 @@ def verify_inference(file_path:str, feature_channel:int, vrange=None, save_path=
             num_workers=2
         )
     predictions_data_module.setup(stage='verification')
-    predictions_loader = predictions_data_module.predictions_dataloader() 
+    predictions_loader = predictions_data_module.verification_dataloader() 
     for predictions_batch in predictions_loader:
         predictions = predictions_batch[0]  # tensor 
         break 

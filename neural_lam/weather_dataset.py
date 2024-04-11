@@ -40,7 +40,17 @@ class WeatherDataset(torch.utils.data.Dataset):
     ):
         super().__init__()
 
-        assert split in ("train", "val", "test", "verification"), "Unknown dataset split"
+        assert split in (
+            "train",
+            "val",
+            "test",
+            "pred",
+            "verification"
+        ), "Unknown dataset split"
+        self.sample_dir_path = os.path.join(
+            "data", dataset_name, "samples", split
+        )
+        print(self.sample_dir_path)
 
         if split == "verification": 
             self.sample_dir_path = path_verif_file
@@ -103,12 +113,46 @@ class WeatherDataset(torch.utils.data.Dataset):
                 else:
                     self.zarr_files = self.zarr_files[0:2]
 
-                start_datetime = (
-                    self.zarr_files[0]
-                    .split("/")[-1]
-                    .split("_")[1]
-                    .replace(".zarr", "")
+            start_datetime = (
+                self.zarr_files[0]
+                .split("/")[-1]
+                .split("_")[1]
+                .replace(".zarr", "")
+            )
+
+            # Stack 2D variables without selecting along z_1
+            datasets_2d = [
+                xr.open_zarr(file, consolidated=True)[variables_2d]
+                .to_array()
+                .pipe(
+                    lambda ds: ds if "z_1" in ds.dims else ds.expand_dims(z_1=[0])
                 )
+                .stack(var=("variable", "z_1"))
+                .transpose("time", "x_1", "y_1", "var")
+                for file in self.zarr_files
+            ]
+
+            # Combine 3D and 2D datasets
+            self.zarr_datasets = [
+                xr.concat([ds_3d, ds_2d], dim="var").sortby("var")
+                for ds_3d, ds_2d in zip(datasets_3d, datasets_2d)
+            ]
+
+            self.standardize = standardize
+            if standardize:
+                ds_stats = utils.load_dataset_stats(dataset_name, "cpu")
+                if constants.GRID_FORCING_DIM > 0:
+                    self.data_mean, self.data_std, self.flux_mean, self.flux_std = (
+                        ds_stats["data_mean"],
+                        ds_stats["data_std"],
+                        ds_stats["flux_mean"],
+                        ds_stats["flux_std"],
+                    )
+                else:
+                    self.data_mean, self.data_std = (
+                        ds_stats["data_mean"],
+                        ds_stats["data_std"],
+                    )
 
                 print("Data subset of 200 samples starts on the", start_datetime)
 
@@ -246,8 +290,8 @@ class WeatherDataModule(pl.LightningDataModule):
         pass
 
     def setup(self, stage=None):
-        # make assignments here (val/train/test split) called on every process
-        # in DDP
+        # make assignments here (val/train/test/predict split)
+        # called on every process in DDP
         if stage == "fit" or stage is None:
             self.train_dataset = WeatherDataset(
                 self.dataset_name,
@@ -274,13 +318,22 @@ class WeatherDataModule(pl.LightningDataModule):
             )
 
         if stage == "verification":
-            self.predictions_dataset = WeatherDataset(
+            self.verification_dataset = WeatherDataset(
                 self.dataset_name,
                 self.path_verif_file,
                 split="verification",
                 standardize=False,
                 subset=False,
                 batch_size=self.batch_size,
+            )
+
+        if stage == "predict" or stage is None:
+            self.predict_dataset = WeatherDataset(
+                self.dataset_name,
+                split="pred",
+                standardize=self.standardize,
+                subset=False,
+                batch_size=1,
             )
 
     def train_dataloader(self):
@@ -309,13 +362,19 @@ class WeatherDataModule(pl.LightningDataModule):
             shuffle=False,
             pin_memory=False,
         )
-    
-    def predictions_dataloader(self): 
+
+    def predict_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.predictions_dataset,
-            path_verif_file=None,
-            batch_size=1,
+            self.predict_dataset,
+            batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
             pin_memory=False,
+        )
+    
+    def verification_dataloader(self): 
+        return torch.utils.data.DataLoader(
+            self.verification_dataset,
+            path_verif_file=None,
+            batch_size=1,
         )

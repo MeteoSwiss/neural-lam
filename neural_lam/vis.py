@@ -1,5 +1,7 @@
-# Third-party
+# Standard library
 import os
+
+# Third-party
 import cartopy.feature as cf
 import matplotlib
 import matplotlib.pyplot as plt
@@ -182,8 +184,11 @@ def plot_spatial_error(error, title=None, vrange=None):
 
     return fig
 
+
 @matplotlib.rc_context(utils.fractional_plot_bundle(1))
-def verify_inference(file_path:str, feature_channel:int, vrange=None, save_path=None):
+def verify_inference(
+    file_path: str, feature_channel: int, vrange=None, save_path=None
+):
     """
     Plot example prediction, forecast, and ground truth.
     Each has shape (N_grid,)
@@ -195,37 +200,44 @@ def verify_inference(file_path:str, feature_channel:int, vrange=None, save_path=
 
     # Load the inference dataset for plotting
     predictions_data_module = WeatherDataModule(
-            "cosmo",
-            path_verif_file=file_path,
-            split="verification",
-            standardize=False,
-            subset=False,
-            batch_size=6,
-            num_workers=2
-        )
-    predictions_data_module.setup(stage='verification')
-    predictions_loader = predictions_data_module.verification_dataloader() 
+        "cosmo",
+        path_verif_file=file_path,
+        split="verif",
+        standardize=False,
+        subset=False,
+        batch_size=6,
+        num_workers=2,
+    )
+    predictions_data_module.setup(stage="verif")
+    predictions_loader = predictions_data_module.verif_dataloader()
     for predictions_batch in predictions_loader:
-        predictions = predictions_batch[0]  # tensor 
-        break 
+        predictions = predictions_batch[0]  # tensor
+        break
 
     # get test data
     data_latlon = xr.open_zarr(constants.EXAMPLE_FILE).isel(time=0)
     lon, lat = unrotate_latlon(data_latlon)
 
     # Get common scale for values
-    total =  predictions[0,:,:,feature_channel]
+    total = predictions[0, :, :, feature_channel]
     total_array = np.array(total)
     if vrange is None:
         vmin = total_array.min()
         vmax = total_array.max()
     else:
-        vmin, vmax = float(vrange[0].cpu().item()), float(vrange[1].cpu().item())
+        vmin, vmax = float(vrange[0].cpu().item()), float(
+            vrange[1].cpu().item()
+        )
 
     # Plot
     for i in range(23):
 
-        feature_array = predictions[0,i,:,feature_channel].reshape(*constants.GRID_SHAPE[::-1]).cpu().numpy()
+        feature_array = (
+            predictions[0, i, :, feature_channel]
+            .reshape(*constants.GRID_SHAPE[::-1])
+            .cpu()
+            .numpy()
+        )
         data_array = np.array(feature_array)
 
         fig, axes = plt.subplots(
@@ -253,18 +265,27 @@ def verify_inference(file_path:str, feature_channel:int, vrange=None, save_path=
         )
 
         # Ticks and labels
-        axes.set_title("Predictions from model inference", size = 15)
-        axes.text(0.5, 1.05, f"Feature channel {feature_channel}, time step {i}", 
-                  ha='center', va='bottom', transform=axes.transAxes, fontsize=12
-                )
+        axes.set_title("Predictions from model inference", size=15)
+        axes.text(
+            0.5,
+            1.05,
+            f"Feature channel {feature_channel}, time step {i}",
+            ha="center",
+            va="bottom",
+            transform=axes.transAxes,
+            fontsize=12,
+        )
         cbar = fig.colorbar(contour_set, orientation="horizontal", aspect=20)
         cbar.ax.tick_params(labelsize=10)
 
-        # Save the plot! 
+        # Save the plot!
         if save_path:
             directory = os.path.dirname(save_path)
             if not os.path.exists(directory):
                 os.makedirs(directory)
-            plt.savefig(save_path + f"_feature_channel_{feature_channel}_"+ f"{i}.png", bbox_inches='tight')
+            plt.savefig(
+                save_path + f"_feature_channel_{feature_channel}_" + f"{i}.png",
+                bbox_inches="tight",
+            )
 
     return fig

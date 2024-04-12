@@ -119,42 +119,7 @@ class WeatherDataset(torch.utils.data.Dataset):
                 .split("_")[1]
                 .replace(".zarr", "")
             )
-
-            # Stack 2D variables without selecting along z_1
-            datasets_2d = [
-                xr.open_zarr(file, consolidated=True)[variables_2d]
-                .to_array()
-                .pipe(
-                    lambda ds: ds if "z_1" in ds.dims else ds.expand_dims(z_1=[0])
-                )
-                .stack(var=("variable", "z_1"))
-                .transpose("time", "x_1", "y_1", "var")
-                for file in self.zarr_files
-            ]
-
-            # Combine 3D and 2D datasets
-            self.zarr_datasets = [
-                xr.concat([ds_3d, ds_2d], dim="var").sortby("var")
-                for ds_3d, ds_2d in zip(datasets_3d, datasets_2d)
-            ]
-
-            self.standardize = standardize
-            if standardize:
-                ds_stats = utils.load_dataset_stats(dataset_name, "cpu")
-                if constants.GRID_FORCING_DIM > 0:
-                    self.data_mean, self.data_std, self.flux_mean, self.flux_std = (
-                        ds_stats["data_mean"],
-                        ds_stats["data_std"],
-                        ds_stats["flux_mean"],
-                        ds_stats["flux_std"],
-                    )
-                else:
-                    self.data_mean, self.data_std = (
-                        ds_stats["data_mean"],
-                        ds_stats["data_std"],
-                    )
-
-                print("Data subset of 200 samples starts on the", start_datetime)
+            print("Data subset of 200 samples starts on the", start_datetime)
 
             # Separate 3D and 2D variables
             variables_3d = [

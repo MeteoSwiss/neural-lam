@@ -7,6 +7,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
+from tqdm import tqdm
 
 # First-party
 from neural_lam import constants, utils
@@ -187,7 +188,7 @@ def plot_spatial_error(error, title=None, vrange=None):
 
 @matplotlib.rc_context(utils.fractional_plot_bundle(1))
 def verify_inference(
-    file_path: str, feature_channel: int, save_path=None, vrange=None
+    file_path: str, save_path: str, feature_channel: int, vrange=None
 ):
     """
     Plot example prediction, forecast, and ground truth.
@@ -233,8 +234,9 @@ def verify_inference(
         )
 
     # Plot
-    for i in range(constants.EVAL_HORIZON - 2):
-
+    for i in tqdm(
+        range(constants.EVAL_HORIZON - 2), desc="Plotting predictions"
+    ):
         feature_array = (
             predictions[0, i, :, feature_channel]
             .reshape(*constants.GRID_SHAPE[::-1])
@@ -282,12 +284,11 @@ def verify_inference(
         cbar.ax.tick_params(labelsize=10)
 
         # Save the plot!
-        if save_path:
-            directory = os.path.dirname(save_path)
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-            plt.savefig(
-                save_path + f"_feature_channel_{feature_channel}_" + f"{i}.png",
-                bbox_inches="tight",
-            )
+        directory = os.path.dirname(save_path)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(
+            f"{save_path}feature_channel_{feature_channel}_{i}.png",
+            bbox_inches="tight",
+        )
         plt.close()

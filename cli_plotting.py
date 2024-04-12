@@ -20,7 +20,7 @@ def main(file_path: str, save_path: str, feature_channel: int) -> None:
     """
     Command line tool for verifying neural_lam inference results.
     """
-    verify_inference(file_path, feature_channel, save_path)
+    verify_inference(file_path, save_path, feature_channel)
 
 
 if __name__ == "__main__":

@@ -45,14 +45,14 @@ class WeatherDataset(torch.utils.data.Dataset):
             "val",
             "test",
             "pred",
-            "verification"
+            "verif"
         ), "Unknown dataset split"
         self.sample_dir_path = os.path.join(
             "data", dataset_name, "samples", split
         )
         print(self.sample_dir_path)
 
-        if split == "verification": 
+        if split == "verif": 
             self.sample_dir_path = path_verif_file
             if os.path.exists(self.sample_dir_path):
                 self.np_files = np.load(self.sample_dir_path)
@@ -189,7 +189,7 @@ class WeatherDataset(torch.utils.data.Dataset):
 
     def __getitem__(self, idx):
 
-        if self.split == "verification": 
+        if self.split == "verif": 
             return self.np_files
 
         else:
@@ -255,7 +255,7 @@ class WeatherDataModule(pl.LightningDataModule):
         pass
 
     def setup(self, stage=None):
-        # make assignments here (val/train/test/predict split)
+        # make assignments here (val/train/test/pred split)
         # called on every process in DDP
         if stage == "fit" or stage is None:
             self.train_dataset = WeatherDataset(
@@ -282,18 +282,18 @@ class WeatherDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
             )
 
-        if stage == "verification":
-            self.verification_dataset = WeatherDataset(
+        if stage == "verif":
+            self.verif_dataset = WeatherDataset(
                 self.dataset_name,
                 self.path_verif_file,
-                split="verification",
+                split="verif",
                 standardize=False,
                 subset=False,
                 batch_size=self.batch_size,
             )
 
-        if stage == "predict" or stage is None:
-            self.predict_dataset = WeatherDataset(
+        if stage == "pred" or stage is None:
+            self.pred_dataset = WeatherDataset(
                 self.dataset_name,
                 split="pred",
                 standardize=self.standardize,
@@ -328,18 +328,18 @@ class WeatherDataModule(pl.LightningDataModule):
             pin_memory=False,
         )
 
-    def predict_dataloader(self):
+    def pred_dataloader(self):
         return torch.utils.data.DataLoader(
-            self.predict_dataset,
+            self.pred_dataset,
             batch_size=self.batch_size,
             num_workers=self.num_workers,
             shuffle=False,
             pin_memory=False,
         )
     
-    def verification_dataloader(self): 
+    def verif_dataloader(self): 
         return torch.utils.data.DataLoader(
-            self.verification_dataset,
+            self.verif_dataset,
             batch_size=1,
             shuffle=False, 
             pin_memory=False,

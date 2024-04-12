@@ -187,7 +187,7 @@ def plot_spatial_error(error, title=None, vrange=None):
 
 @matplotlib.rc_context(utils.fractional_plot_bundle(1))
 def verify_inference(
-    file_path: str, feature_channel: int, vrange=None, save_path=None
+    file_path: str, feature_channel: int, save_path=None, vrange=None
 ):
     """
     Plot example prediction, forecast, and ground truth.
@@ -212,7 +212,8 @@ def verify_inference(
 
     # Verify that feature channel is between 0 and 42
     if not 0 <= feature_channel < predictions.shape[-1]:
-        raise ValueError("feature_channel must be between 0 and 42, inclusive.")
+        raise ValueError(
+            f"feature_channel must be between 0 and {predictions.shape[-1]}, inclusive.")
 
     # get test data
     data_latlon = xr.open_zarr(constants.EXAMPLE_FILE).isel(time=0)
@@ -287,5 +288,4 @@ def verify_inference(
                 save_path + f"_feature_channel_{feature_channel}_" + f"{i}.png",
                 bbox_inches="tight",
             )
-
-    return fig
+        plt.close()

@@ -375,6 +375,7 @@ class WeatherDataModule(pl.LightningDataModule):
     def verification_dataloader(self): 
         return torch.utils.data.DataLoader(
             self.verification_dataset,
-            path_verif_file=None,
             batch_size=1,
+            shuffle=False, 
+            pin_memory=False,
         )

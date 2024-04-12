@@ -270,7 +270,7 @@ Arguments and options:
 Example Usage to run the plotting on a the 10th feature channel of a .npy file located at /data/results/inference_output.npy and save the output in /outputs::
 
 ```
-python cli_plotting.py --file_path /data/results/inference_output.npy --save_path /outputs --feature_channel 10
+python cli_plotting.py data/results/inference_output.npy outputs/ --feature_channel 10
 ```
 
 

@@ -194,10 +194,6 @@ def verify_inference(
     Each has shape (N_grid,)
     """
 
-    # Verify that feature channel is between 0 and 42
-    if not 0 <= feature_channel <= 42:
-        raise ValueError("feature_channel must be between 0 and 42, inclusive.")
-
     # Load the inference dataset for plotting
     predictions_data_module = WeatherDataModule(
         "cosmo",
@@ -213,6 +209,10 @@ def verify_inference(
     for predictions_batch in predictions_loader:
         predictions = predictions_batch[0]  # tensor
         break
+
+    # Verify that feature channel is between 0 and 42
+    if not 0 <= feature_channel < predictions.shape[-1]:
+        raise ValueError("feature_channel must be between 0 and 42, inclusive.")
 
     # get test data
     data_latlon = xr.open_zarr(constants.EXAMPLE_FILE).isel(time=0)
@@ -230,7 +230,7 @@ def verify_inference(
         )
 
     # Plot
-    for i in range(23):
+    for i in range(constants.EVAL_HORIZON - 2):
 
         feature_array = (
             predictions[0, i, :, feature_channel]

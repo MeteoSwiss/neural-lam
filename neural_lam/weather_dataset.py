@@ -305,6 +305,7 @@ class WeatherDataModule(pl.LightningDataModule):
             )
 
     def train_dataloader(self):
+        """Load train dataset."""
         return torch.utils.data.DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
@@ -314,6 +315,7 @@ class WeatherDataModule(pl.LightningDataModule):
         )
 
     def val_dataloader(self):
+        """Load validation dataset."""
         return torch.utils.data.DataLoader(
             self.val_dataset,
             batch_size=self.batch_size // self.batch_size,
@@ -323,6 +325,7 @@ class WeatherDataModule(pl.LightningDataModule):
         )
 
     def test_dataloader(self):
+        """Load test dataset."""
         return torch.utils.data.DataLoader(
             self.test_dataset,
             batch_size=self.batch_size,
@@ -332,6 +335,7 @@ class WeatherDataModule(pl.LightningDataModule):
         )
 
     def pred_dataloader(self):
+        """Load prediction dataset."""
         return torch.utils.data.DataLoader(
             self.pred_dataset,
             batch_size=self.batch_size,
@@ -341,6 +345,7 @@ class WeatherDataModule(pl.LightningDataModule):
         )
 
     def verif_dataloader(self):
+        """Load inference output dataset."""
         return torch.utils.data.DataLoader(
             self.verif_dataset,
             batch_size=1,

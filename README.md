@@ -267,7 +267,7 @@ Arguments and options:
   * `--save_path`: The path where the output files will be saved. This argument is required.
   * `--feature_channel` (Optional): Specifies the feature channel to use during the verification. Default is 0.
 
-Example Usage to run the plotting on a the 10th feature channel of a .npy file located at /data/results/inference_output.npy and save the output in /outputs::
+Example Usage to run the plotting on the 10th feature channel of a .npy file located at /data/results/inference_output.npy and save the output in /outputs::
 
 ```
 python cli_plotting.py data/results/inference_output.npy outputs/ --feature_channel 10

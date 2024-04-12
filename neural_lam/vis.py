@@ -210,10 +210,12 @@ def verify_inference(
         predictions = predictions_batch[0]  # tensor
         break
 
-    # Verify that feature channel is between 0 and 42
+    # Verify that feature channel is within bounds
     if not 0 <= feature_channel < predictions.shape[-1]:
         raise ValueError(
-            f"feature_channel must be between 0 and {predictions.shape[-1]}, inclusive.")
+            f"feature_channel must be between 0 and "
+            f"{predictions.shape[-1]-1}, inclusive."
+        )
 
     # get test data
     data_latlon = xr.open_zarr(constants.EXAMPLE_FILE).isel(time=0)

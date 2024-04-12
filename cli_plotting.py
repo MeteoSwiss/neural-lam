@@ -24,4 +24,4 @@ def main(file_path: str, save_path: str, feature_channel: int) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    main()  # pylint: disable=no-value-for-parameter

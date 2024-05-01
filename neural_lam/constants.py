@@ -84,6 +84,20 @@ PARAM_UNITS = [
     "m\\textsuperscript{2}/s\\textsuperscript{2}",
 ]
 
+# Dummy values for now
+VERTICAL_LEVELS = [1000, 900, 850, 500, 300, 200, 100]
+IS_3D = {
+    "p": True,
+    "nlwrs": True,
+    "nswrs": True,
+    "r": True,
+    "t": True,
+    "u": True,
+    "v": True,
+    "wvint": False,
+    "z": True,
+}
+
 # Projection and grid
 # Hard coded for now, but should eventually be part of dataset desc. files
 GRID_SHAPE = (268, 238)  # (y, x)

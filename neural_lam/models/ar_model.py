@@ -93,6 +93,39 @@ class ARModel(pl.LightningModule):
         # For storing spatial loss maps during evaluation
         self.spatial_loss_maps = []
 
+        self.variable_indices = self.precompute_variable_indices()
+        self.selected_vars_units = list(
+            zip(constants.PARAM_NAMES_SHORT, constants.PARAM_UNITS)
+        )
+
+    def precompute_variable_indices(self):
+        """
+        Precompute indices for each variable in the input tensor
+        """
+        variable_indices = {}
+        all_vars = []
+        index = 0
+        # Create a list of tuples for all variables, using level 0 for 2D
+        # variables
+        for var_name in constants.PARAM_NAMES_SHORT:
+            if constants.IS_3D[var_name]:
+                for level in constants.VERTICAL_LEVELS:
+                    all_vars.append((var_name, level))
+            else:
+                all_vars.append((var_name, 0))  # Use level 0 for 2D variables
+
+        # Sort the variables based on the tuples
+        sorted_vars = sorted(all_vars)
+
+        for var in sorted_vars:
+            var_name, level = var
+            if var_name not in variable_indices:
+                variable_indices[var_name] = []
+            variable_indices[var_name].append(index)
+            index += 1
+
+        return variable_indices
+
     def configure_optimizers(self):
         opt = torch.optim.AdamW(
             self.parameters(), lr=self.lr, betas=(0.9, 0.95)
@@ -400,7 +433,7 @@ class ARModel(pl.LightningModule):
                         target_t[:, var_i],
                         self.interior_mask[:, 0],
                         title=f"{var_name} ({var_unit}), "
-                        f"t={t_i} ({self.step_length*t_i} h)",
+                        f"t={t_i} ({self.step_length * t_i} h)",
                         vrange=var_vrange,
                     )
                     for var_i, (var_name, var_unit, var_vrange) in enumerate(
@@ -542,7 +575,7 @@ class ARModel(pl.LightningModule):
                 vis.plot_spatial_error(
                     loss_map,
                     self.interior_mask[:, 0],
-                    title=f"Test loss, t={t_i} ({self.step_length*t_i} h)",
+                    title=f"Test loss, t={t_i} ({self.step_length * t_i} h)",
                 )
                 for t_i, loss_map in zip(
                     constants.VAL_STEP_LOG_ERRORS, mean_spatial_loss

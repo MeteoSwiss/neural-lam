@@ -37,7 +37,6 @@ class ARModel(pl.LightningModule):
         # Log prediction error for these time steps forward
         self.val_step_log_errors = constants.VAL_STEP_LOG_ERRORS
         self.metrics_initialized = constants.METRICS_INITIALIZED
-
         # Some constants useful for sub-classes
         self.grid_forcing_dim = constants.GRID_FORCING_DIM
         self.grid_state_dim = constants.GRID_STATE_DIM

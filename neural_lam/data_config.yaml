@@ -135,7 +135,6 @@ boundary: # Boundary conditions
     - U_10M
     - V_10M
   atmosphere:
-    - divergence
     - PP
     - QV
     - RELHUM

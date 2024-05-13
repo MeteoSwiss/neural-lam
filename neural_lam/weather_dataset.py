@@ -186,3 +186,9 @@ class WeatherDataModule(pl.LightningDataModule):
             num_workers=self.num_workers,
             shuffle=False,
         )
+
+loader = WeatherDataModule()
+loader.setup()
+for batch in loader.train_dataloader():
+    print(batch[0].shape, batch[1].shape, batch[2].shape, batch[3].shape, len(batch[4]))
+    break

@@ -143,6 +143,24 @@ IS_3D = {
     "V_10M": 0,
 }
 
+GRIB_NAME = {
+    "PP": "pres",
+    "QV": "q",
+    "RELHUM": "r",
+    "T": "t",
+    "U": "u",
+    "V": "v",
+    "W": "wz",
+    "CLCT": "ccl",
+    "PMSL": "prmsl",
+    "PS": "sp",
+    "T_2M": "2t",
+    "TOT_PREC": "tp",
+    "U_10M": "10u",
+    "V_10M": "10v",
+}
+
+
 # Vertical level weights
 # These were retrieved based on the pressure levels of
 # https://weatherbench2.readthedocs.io/en/latest/data-guide.html#era5
@@ -183,6 +201,11 @@ EVAL_DATETIMES = ["2020050400"]  # prev_prev timestep (t-2)
 EVAL_PLOT_VARS = ["T_2M"]
 STORE_EXAMPLE_DATA = True
 SELECTED_PROJ = ccrs.PlateCarree()
+SAMPLE_GRIB = "templates/lfff02180000"
+SAMPLE_Z_GRIB = "templates/lfff02180000z"
+EVAL_DATETIME = ["2020100215"]
+POLLON = -170.0
+POLLAT = 43.0
 SMOOTH_BOUNDARIES = False
 
 # Some constants useful for sub-classes 3 fluxes variables + 4 time-related

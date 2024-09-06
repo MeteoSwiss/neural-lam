@@ -1,3 +1,5 @@
+# DEPRECATED, Development happens in https://github.com/sadamov/neural-lam
+
 <p align="middle">
     <img src="figures/neural_lam_header.png" width="700">
 </p>

@@ -1,4 +1,4 @@
-# DEPRECATED, Development happens in https://github.com/sadamov/neural-lam
+# DEPRECATED, Development happens in https://github.com/mllam/neural-lam
 
 <p align="middle">
     <img src="figures/neural_lam_header.png" width="700">

@@ -179,7 +179,7 @@ METRICS_INITIALIZED = False
 # Plotting
 FIG_SIZE = (15, 10)
 EXAMPLE_FILE = "data/cosmo/samples/train/data.zarr"
-EVAL_DATETIMES = ["2020050400"]  # prev_prev timestep (t-2)
+EVAL_DATETIMES = ["2015112800"]  # prev_prev timestep (t-2)
 EVAL_PLOT_VARS = ["T_2M"]
 STORE_EXAMPLE_DATA = True
 SELECTED_PROJ = ccrs.PlateCarree()
